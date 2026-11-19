@@ -12,8 +12,8 @@
 							<tr style="vertical-align:top"><td>Output</td><td><textarea style="field-sizing:content;resize:none;width:92vw;box-sizing:border-box">${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
 						</#if>
 					</tbody>
-				</able>
-			</form>	
+				</table>
+			</form>
 		</fieldset>
 	</body>
 </html>
