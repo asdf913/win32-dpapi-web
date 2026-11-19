@@ -90,7 +90,8 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), null, writer);
+					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"),
+							Collections.singletonMap("request", request), writer);
 					//
 				} catch (final TemplateException e) {
 					//

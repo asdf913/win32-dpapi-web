@@ -1,4 +1,4 @@
 <html>
 	<head></head>
-	<body>cryptUnprotectData</body>
+	<body><#if request?? && request.servletPath?? && request.servletPath?is_string>${request.servletPath[1..]}</#if></body>
 </html>
