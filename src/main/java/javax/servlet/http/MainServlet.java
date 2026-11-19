@@ -3,21 +3,28 @@ package javax.servlet.http;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.file.FileSystems;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.Base64.Encoder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,12 +33,23 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.apache.commons.codec.BinaryDecoder;
+import org.apache.commons.codec.BinaryEncoder;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.EncoderException;
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.function.FailableFunction;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.ClassPath;
+import com.google.common.reflect.ClassPath.ClassInfo;
 import com.sun.jna.platform.win32.Crypt32Util;
 
 import freemarker.core.ParseException;
@@ -101,8 +119,18 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"),
-							Collections.singletonMap("request", request), writer);
+					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
+					//
+					final String[] encodings = toArray(
+							keySet(getEncodingMap(getContextClassLoader(Thread.currentThread()))), new String[] {});
+					//
+					Arrays.sort(encodings, MainServlet::compare);
+					//
+					map.put("encodings", encodings);
+					//
+					map.put("encoding", "base64");
+					//
+					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
 				} catch (final TemplateException e) {
 					//
@@ -114,6 +142,235 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static <K> Set<K> keySet(final Map<K, ?> instance) {
+		return instance != null ? instance.keySet() : null;
+	}
+
+	private static Map<String, Class<?>> getEncodingMap(final ClassLoader classLoader) {
+		//
+		return collect(filter(
+				map(stream(getTopLevelClasses(from(classLoader), "org.apache.commons.codec.binary")),
+						MainServlet::load),
+				x -> Boolean.logicalAnd(Boolean.logicalAnd(isAssignableFrom(BinaryEncoder.class, x),
+						isAssignableFrom(BinaryDecoder.class, x)), !isAbstract(x))),
+				Collectors.toMap(x -> {
+					//
+					final String simpleName = getSimpleName(x);
+					//
+					if (matches(simpleName, "^\\w+\\d{2}$")) {
+						//
+						return toLowerCase(simpleName);
+						//
+					} // if
+						//
+					final Matcher matcher = matcher(Pattern.compile("([A-Z][a-z]+)"), simpleName);
+					//
+					if (find(matcher)) {
+						//
+						return toLowerCase(group(matcher));
+						//
+					} // if
+						//
+					return simpleName;
+					//
+				}, Function.identity()));
+		//
+	}
+
+	private static String toLowerCase(final String instance) {
+		//
+		if (instance == null) {
+			//
+			return instance;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return (field == null || Narcissus.getField(instance, field) != null) ? instance.toLowerCase() : null;
+		//
+	}
+
+	private static String group(final MatchResult instance) {
+		return instance != null ? instance.group() : null;
+	}
+
+	private static boolean find(final Matcher instance) {
+		//
+		if (instance == null) {
+			//
+			return false;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "groups")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return (field == null || Narcissus.getField(instance, field) != null) && instance.find();
+		//
+	}
+
+	private static boolean matches(final String instance, final String regex) {
+		//
+		if (instance == null) {
+			//
+			return false;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null && Narcissus.getField(regex, field) == null) {
+			//
+			return false;
+			//
+		} // if
+			//
+		return (field == null || Narcissus.getField(instance, field) != null) && instance.matches(regex);
+		//
+	}
+
+	private static Matcher matcher(final Pattern instance, final String input) {
+		//
+		if (instance == null || input == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "normalizedPattern")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return (field == null || Narcissus.getField(instance, field) != null) ? instance.matcher(input) : null;
+		//
+	}
+
+	private static String getSimpleName(final Class<?> instance) {
+		return instance != null ? instance.getSimpleName() : null;
+	}
+
+	private static boolean isAbstract(final Class<?> instance) {
+		return instance != null && Modifier.isAbstract(instance.getModifiers());
+	}
+
+	private static boolean isAssignableFrom(final Class<?> a, final Class<?> b) {
+		return a != null && b != null && a.isAssignableFrom(b);
+	}
+
+	private static Class<?> load(final ClassInfo instance) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "loader")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null ? instance.load() : null;
+		//
+	}
+
+	private static ImmutableSet<ClassInfo> getTopLevelClasses(final ClassPath instance, final String packageName) {
+		//
+		if (instance == null || packageName == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(stream(
+						testAndApply(Objects::nonNull, getClass(packageName), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null && Narcissus.getField(packageName, field) == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		return (field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "resources")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null)) == null || Narcissus.getField(instance, field) != null
+						? instance.getTopLevelClasses(packageName)
+						: null;
+		//
+	}
+
+	private static ClassPath from(final ClassLoader classloader) {
+		//
+		final List<Method> ms = collect(
+				filter(testAndApply(Objects::nonNull, ClassPath.class.getDeclaredMethods(), Arrays::stream, null),
+						x -> Boolean.logicalAnd(Objects.equals(getName(x), "from"),
+								Arrays.equals(getParameterTypes(x), new Class<?>[] { ClassLoader.class }))),
+				Collectors.toList());
+		//
+		return cast(ClassPath.class,
+				testAndApply((a, b) -> isStatic(a) && b != null && b.getParent() != null,
+						testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
+						classloader, Narcissus::invokeStaticMethod, null));
+		//
+	}
+
+	private static <T, U, R> R testAndApply(final BiPredicate<T, U> predicate, final T t, final U u,
+			final BiFunction<T, U, R> functionTrue, final BiFunction<T, U, R> functionFalse) {
+		return (predicate != null && predicate.test(t, u)) ? apply(functionTrue, t, u) : apply(functionFalse, t, u);
+	}
+
+	private static <T, U, R> R apply(final BiFunction<T, U, R> instance, final T t, final U u) {
+		return instance != null ? instance.apply(t, u) : null;
+	}
+
+	private static <T> T cast(final Class<T> clz, final Object instance) {
+		return clz != null && clz.isInstance(instance) ? clz.cast(instance) : null;
+	}
+
+	private static boolean isStatic(final Member instance) {
+		return instance != null && Modifier.isStatic(instance.getModifiers());
+	}
+
+	private static Class<?>[] getParameterTypes(final Executable instance) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Stream<Field> stream = testAndApply(Objects::nonNull,
+				testAndApply(Objects::nonNull, getClass(instance), Narcissus::getDeclaredFields, null), Arrays::stream,
+				null);
+		//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(stream, x -> Objects.equals(getName(x), "parameterTypes")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null ? instance.getParameterTypes() : null;
+		//
 	}
 
 	private static PrintWriter getWriter(final ServletResponse instance) throws IOException {
@@ -138,19 +395,33 @@ public class MainServlet extends HttpServlet {
 					//
 					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
 					//
+					final Map<String, Class<?>> encodingMap = getEncodingMap(
+							getContextClassLoader(Thread.currentThread()));
+					//
+					final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+					//
+					Arrays.sort(encodings, MainServlet::compare);
+					//
+					map.put("encodings", encodings);
+					//
+					final String encoding = getParameter(request, "encoding");
+					//
+					map.put("encoding", encoding);
+					//
 					final RandomUtils randomUtils = RandomUtils.secure();
 					//
-					map.put("output",
-							testAndApply(Objects::nonNull,
-									isWindows()
-											? testAndApply(x -> x != null, getBytes(getParameter(request, "input")),
-													Crypt32Util::cryptProtectData, null)
-											: randomBytes(randomUtils, randomInt(randomUtils, 1, 100)),
-									x -> encodeToString(Base64.getEncoder(), x), null));
+					map.put("output", testAndApply(Objects::nonNull,
+							testAndApply(Objects::nonNull, isWindows() ? testAndApply(x -> x != null,
+									getBytes(getParameter(request, "input")), Crypt32Util::cryptProtectData, null)
+									: randomBytes(randomUtils, randomInt(randomUtils, 1, 100)),
+									x -> encode(cast(BinaryEncoder.class,
+											newInstance(MapUtils.getObject(encodingMap, encoding))), x),
+									null),
+							String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
-				} catch (final TemplateException e) {
+				} catch (final Exception e) {
 					//
 					throw new ServletException(getMessage(e), e);
 					//
@@ -162,14 +433,35 @@ public class MainServlet extends HttpServlet {
 					//
 					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
 					//
-					map.put("output", testAndApply(Objects::nonNull, isWindows()
-							? testAndApply(x -> x != null, decode(Base64.getDecoder(), getParameter(request, "input")),
-									Crypt32Util::cryptUnprotectData, null)
-							: getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100)), String::new, null));
+					final Map<String, Class<?>> encodingMap = getEncodingMap(
+							getContextClassLoader(Thread.currentThread()));
+					//
+					final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+					//
+					Arrays.sort(encodings, MainServlet::compare);
+					//
+					map.put("encodings", encodings);
+					//
+					final String encoding = getParameter(request, "encoding");
+					//
+					map.put("encoding", encoding);
+					//
+					map.put("output",
+							testAndApply(Objects::nonNull,
+									isWindows()
+											? testAndApply(
+													x -> x != null, decode(
+															cast(BinaryDecoder.class,
+																	newInstance(
+																			MapUtils.getObject(encodingMap, encoding))),
+															getBytes(getParameter(request, "input"))),
+													Crypt32Util::cryptUnprotectData, null)
+											: getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100)),
+									String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
-				} catch (final TemplateException e) {
+				} catch (final Exception e) {
 					//
 					throw new ServletException(getMessage(e), e);
 					//
@@ -181,22 +473,68 @@ public class MainServlet extends HttpServlet {
 			//
 	}
 
-	private static byte[] decode(final Decoder instance, final String string) {
+	private static byte[] decode(final BinaryDecoder instance, final byte[] source) throws DecoderException {
+		return instance != null && source != null ? instance.decode(source) : null;
+	}
+
+	private static byte[] encode(final BinaryEncoder instance, final byte[] source) throws EncoderException {
+		return instance != null && source != null ? instance.encode(source) : null;
+	}
+
+	private static Object newInstance(final Class<?> instance) throws InstantiationException, IllegalAccessException {
+		return instance != null && !Objects.equals(instance, Class.class) ? instance.newInstance() : null;
+	}
+
+	private static int compare(final String a, final String b) {
 		//
-		if (instance == null || string == null) {
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(stream(testAndApply(Objects::nonNull, getClass(a), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null
+				&& Boolean.logicalOr(Narcissus.getField(a, field) == null, Narcissus.getField(b, field) == null)) {
 			//
-			return null;
+			return 0;
 			//
 		} // if
 			//
-		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
-				collect(filter(
-						stream(testAndApply(Objects::nonNull, getClass(string), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
-				x -> IterableUtils.get(x, 0), null);
+		final int compare = Integer.compare(StringUtils.length(a), StringUtils.length(b));
 		//
-		return field == null || Narcissus.getField(string, field) != null ? instance.decode(string) : null;
+		if (compare < 0) {
+			//
+			return compare;
+			//
+		} // if
+			//
+		final Pattern pattern = Pattern.compile("\\d+");
 		//
+		Matcher matcher = matcher(pattern, a);
+		//
+		String s = null;
+		//
+		Integer ia = null;
+		//
+		if (find(matcher) && NumberUtils.isDigits(s = group(matcher))) {
+			//
+			ia = Integer.valueOf(s);
+			//
+		} // if
+			//
+		Integer ib = null;
+		//
+		if (find(matcher = matcher(pattern, b)) && NumberUtils.isDigits(s = group(matcher))) {
+			//
+			ib = Integer.valueOf(s);
+			//
+		} // if
+			//
+		return ObjectUtils.compare(ia, ib);
+		//
+	}
+
+	private static <T> T[] toArray(final Collection<T> instance, final T[] array) {
+		return instance != null ? instance.toArray(array) : null;
 	}
 
 	private static String nextAlphanumeric(final RandomStringUtils instance, final int minLengthInclusive,
@@ -256,10 +594,6 @@ public class MainServlet extends HttpServlet {
 				? instance.randomInt(startInclusive, endExclusive)
 				: startInclusive;
 		//
-	}
-
-	private static String encodeToString(final Encoder instance, final byte[] bs) {
-		return instance != null ? instance.encodeToString(bs) : null;
 	}
 
 	private static boolean isWindows() {
@@ -357,8 +691,8 @@ public class MainServlet extends HttpServlet {
 		return instance != null ? instance.stream() : null;
 	}
 
-	private static <T, R> R testAndApply(final Predicate<T> predicate, final T value, final Function<T, R> functionTrue,
-			final Function<T, R> functionFalse) {
+	private static <T, R, E extends Throwable> R testAndApply(final Predicate<T> predicate, final T value,
+			final FailableFunction<T, R, E> functionTrue, final FailableFunction<T, R, E> functionFalse) throws E {
 		return test(predicate, value) ? apply(functionTrue, value) : apply(functionFalse, value);
 	}
 
@@ -366,7 +700,8 @@ public class MainServlet extends HttpServlet {
 		return instance != null && instance.test(value);
 	}
 
-	private static <T, R> R apply(final Function<T, R> instance, final T value) {
+	private static <T, R, E extends Throwable> R apply(final FailableFunction<T, R, E> instance, final T value)
+			throws E {
 		return instance != null ? instance.apply(value) : null;
 	}
 

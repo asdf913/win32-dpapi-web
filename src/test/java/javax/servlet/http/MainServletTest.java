@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -14,14 +15,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.Base64.Encoder;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.regex.MatchResult;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +31,8 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.apache.commons.codec.BinaryDecoder;
+import org.apache.commons.codec.BinaryEncoder;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -54,7 +57,7 @@ import io.github.toolfactory.narcissus.Narcissus;
 class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
-			METHOD_STREAM, METHOD_DECODE = null;
+			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -73,7 +76,12 @@ class MainServletTest {
 		//
 		(METHOD_STREAM = clz.getDeclaredMethod("stream", Collection.class)).setAccessible(true);
 		//
-		(METHOD_DECODE = clz.getDeclaredMethod("decode", Decoder.class, String.class)).setAccessible(true);
+		(METHOD_TEST_AND_APPLY = clz.getDeclaredMethod("testAndApply", Predicate.class, Object.class,
+				FailableFunction.class, FailableFunction.class)).setAccessible(true);
+		//
+		(METHOD_GET_PARAMETER_TYPES = clz.getDeclaredMethod("getParameterTypes", Executable.class)).setAccessible(true);
+		//
+		(METHOD_CAST = clz.getDeclaredMethod("cast", Class.class, Object.class)).setAccessible(true);
 		//
 	}
 
@@ -85,7 +93,7 @@ class MainServletTest {
 
 		private String servletPath;
 
-		private Integer serverPort = null;
+		private Integer serverPort, modifiers;
 
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
@@ -120,7 +128,7 @@ class MainServletTest {
 					//
 					return contains;
 					//
-				} else if (Objects.equals(name, "stream")) {
+				} else if (contains(Arrays.asList("stream", "toArray"), name)) {
 					//
 					return null;
 					//
@@ -130,15 +138,25 @@ class MainServletTest {
 				//
 				return servletPath;
 				//
-			} else if (proxy instanceof Member && Objects.equals(name, "getName")) {
+			} else if (proxy instanceof Member) {
 				//
-				return null;
-				//
-			} else if (proxy instanceof Predicate && Objects.equals(name, "test")) {
+				if (Objects.equals(name, "getName")) {
+					//
+					return null;
+					//
+				} else if (Objects.equals(name, "getModifiers")) {
+					//
+					return modifiers;
+					//
+				} // if
+					//
+			} else if (Boolean.logicalOr(proxy instanceof Predicate, proxy instanceof BiPredicate)
+					&& Objects.equals(name, "test")) {
 				//
 				return test;
 				//
-			} else if (proxy instanceof Function && Objects.equals(name, "apply")) {
+			} else if (Boolean.logicalOr(proxy instanceof FailableFunction, proxy instanceof BiFunction)
+					&& Objects.equals(name, "apply")) {
 				//
 				return null;
 				//
@@ -154,6 +172,22 @@ class MainServletTest {
 					//
 				} // if
 					//
+			} else if (proxy instanceof MatchResult && Objects.equals(name, "group")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof BinaryDecoder && Objects.equals(name, "decode")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof BinaryEncoder && Objects.equals(name, "encode")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof Map && Objects.equals(name, "keySet")) {
+				//
+				return null;
+				//
 			} // if
 				//
 			throw new Throwable(name);
@@ -301,7 +335,11 @@ class MainServletTest {
 	private static <T, R, E extends Throwable> R testAndApply(final Predicate<T> predicate, final T value,
 			final FailableFunction<T, R, E> functionTrue, final FailableFunction<T, R, E> functionFalse)
 			throws Throwable {
-		return test(predicate, value) ? apply(functionTrue, value) : apply(functionFalse, value);
+		try {
+			return (R) invoke(METHOD_TEST_AND_APPLY, null, predicate, value, functionTrue, functionFalse);
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
 	}
 
 	@Test
@@ -322,11 +360,6 @@ class MainServletTest {
 		} catch (final InvocationTargetException e) {
 			throw e.getTargetException();
 		}
-	}
-
-	private static <T, R, E extends Throwable> R apply(final FailableFunction<T, R, E> instance, final T value)
-			throws E {
-		return instance != null ? instance.apply(value) : null;
 	}
 
 	private static String getName(final Class<?> instance) {
@@ -353,7 +386,7 @@ class MainServletTest {
 		for (int i = 0; ms != null && i < ms.length; i++) {
 			//
 			if ((m = ArrayUtils.get(ms, i)) == null || m.isSynthetic()
-					|| (parameterTypes = m.getParameterTypes()) == null) {
+					|| (parameterTypes = getParameterTypes(m)) == null) {
 				//
 				continue;
 				//
@@ -418,7 +451,7 @@ class MainServletTest {
 		for (int i = 0; ms != null && i < ms.length; i++) {
 			//
 			if ((m = ArrayUtils.get(ms, i)) == null || m.isSynthetic()
-					|| (parameterTypes = m.getParameterTypes()) == null) {
+					|| (parameterTypes = getParameterTypes(m)) == null) {
 				//
 				continue;
 				//
@@ -436,6 +469,8 @@ class MainServletTest {
 						//
 						Field f = null;
 						//
+						Class<?> type = null;
+						//
 						for (int k = 0; k < IterableUtils.size(fs); k++) {
 							//
 							if ((f = IterableUtils.get(fs, k)) == null) {
@@ -444,9 +479,13 @@ class MainServletTest {
 								//
 							} // if
 								//
-							if (Objects.equals(f.getType(), Boolean.class)) {
+							if (Objects.equals(type = f.getType(), Boolean.class)) {
 								//
 								Narcissus.setField(ih, f, Boolean.TRUE);
+								//
+							} else if (Objects.equals(type, Integer.class)) {
+								//
+								Narcissus.setField(ih, f, Integer.valueOf(0));
 								//
 							} // if
 								//
@@ -467,6 +506,14 @@ class MainServletTest {
 				} else if (Objects.equals(parameterType, Integer.TYPE)) {
 					//
 					add(collection, Integer.valueOf(0));
+					//
+				} else if (Objects.equals(parameterType, ClassLoader.class)) {
+					//
+					add(collection, Narcissus.allocateInstance(getClass(ClassLoader.getSystemClassLoader())));
+					//
+				} else if (Objects.equals(parameterType, Executable.class)) {
+					//
+					add(collection, Narcissus.allocateInstance(Method.class));
 					//
 				} else if (parameterType != null && parameterType.isArray()) {
 					//
@@ -496,8 +543,8 @@ class MainServletTest {
 							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "getName"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
-					|| Boolean.logicalAnd(Objects.equals(name, "encodeToString"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Encoder.class, byte[].class }))) {
+					|| Boolean.logicalAnd(Objects.equals(name, "getSimpleName"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -509,6 +556,20 @@ class MainServletTest {
 				//
 		} // for
 			//
+	}
+
+	private static Class<?>[] getParameterTypes(final Executable instance) throws Throwable {
+		try {
+			final Object obj = invoke(METHOD_GET_PARAMETER_TYPES, null, instance);
+			if (obj == null) {
+				return null;
+			} else if (obj instanceof Class<?>[]) {
+				return (Class<?>[]) obj;
+			}
+			throw new Throwable(Objects.toString(getClass(obj)));
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
 	}
 
 	private static String getName(final Member instance) throws Throwable {
@@ -544,8 +605,12 @@ class MainServletTest {
 		}
 	}
 
-	private static <T> T cast(final Class<T> clz, final Object instance) {
-		return clz != null && clz.isInstance(instance) ? clz.cast(instance) : null;
+	private static <T> T cast(final Class<T> clz, final Object instance) throws Throwable {
+		try {
+			return (T) invoke(METHOD_CAST, null, clz, instance);
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
 	}
 
 	private static Object[] toArray(final Collection<?> instance) {
@@ -690,13 +755,6 @@ class MainServletTest {
 		//
 		Assert.assertNull(invoke(METHOD_COLLECT, null,
 				Reflection.newProxy(Stream.class, ObjectUtils.getIfNull(ih, IH::new)), null));
-		//
-	}
-
-	@Test
-	void testDecoder() throws IllegalAccessException, InvocationTargetException {
-		//
-		Assert.assertNull(invoke(METHOD_DECODE, null, Base64.getDecoder(), null));
 		//
 	}
 
