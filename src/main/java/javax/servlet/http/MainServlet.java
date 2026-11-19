@@ -1,6 +1,7 @@
 package javax.servlet.http;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -67,7 +69,7 @@ public class MainServlet extends HttpServlet {
 		//
 		final String servletPath = getServletPath(request);
 		//
-		try (final Writer writer = response != null ? response.getWriter() : null) {
+		try (final Writer writer = getWriter(response)) {
 			//
 			if (Objects.equals(servletPath, "/")) {
 				//
@@ -110,6 +112,10 @@ public class MainServlet extends HttpServlet {
 			//
 	}
 
+	private static PrintWriter getWriter(final ServletResponse instance) throws IOException {
+		return instance != null ? instance.getWriter() : null;
+	}
+
 	private static String getServletPath(final HttpServletRequest instance) {
 		return instance != null ? instance.getServletPath() : null;
 	}
@@ -120,7 +126,7 @@ public class MainServlet extends HttpServlet {
 		//
 		final String servletPath = getServletPath(request);
 		//
-		try (final Writer writer = response != null ? response.getWriter() : null) {
+		try (final Writer writer = getWriter(response)) {
 			//
 			if (Objects.equals(servletPath, "/cryptProtectData")) {
 				//
