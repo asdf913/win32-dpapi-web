@@ -9,6 +9,7 @@ import java.lang.reflect.Proxy;
 import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -152,10 +154,68 @@ public class MainServlet extends HttpServlet {
 					//
 				} // try
 					//
+			} else if (Objects.equals(servletPath, "/cryptUnprotectData")) {
+				//
+				try {
+					//
+					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
+					//
+					map.put("output", testAndApply(Objects::nonNull, isWindows()
+							? testAndApply(x -> x != null, decode(Base64.getDecoder(), getParameter(request, "input")),
+									Crypt32Util::cryptUnprotectData, null)
+							: getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100)), String::new, null));
+					//
+					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
+					//
+				} catch (final TemplateException e) {
+					//
+					throw new ServletException(getMessage(e), e);
+					//
+				} // try
+					//
 			} // if
 				//
 		} // try
 			//
+	}
+
+	private static byte[] decode(final Decoder instance, final String string) {
+		//
+		if (instance == null || string == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(string), FieldUtils::getAllFieldsList, null)),
+						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(string, field) != null ? instance.decode(string) : null;
+		//
+	}
+
+	private static String nextAlphanumeric(final RandomStringUtils instance, final int minLengthInclusive,
+			final int maxLengthExclusive) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						f -> Objects.equals(getName(f), "random")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null
+				? instance.nextAlphanumeric(minLengthInclusive, maxLengthExclusive)
+				: null;
+		//
 	}
 
 	private static byte[] randomBytes(final RandomUtils instance, final int size) {

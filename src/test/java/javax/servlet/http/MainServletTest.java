@@ -14,9 +14,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -41,7 +42,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.testng.Assert;
-import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -54,7 +54,7 @@ import io.github.toolfactory.narcissus.Narcissus;
 class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
-			METHOD_STREAM = null;
+			METHOD_STREAM, METHOD_DECODE = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -72,6 +72,8 @@ class MainServletTest {
 		(METHOD_TEST = clz.getDeclaredMethod("test", Predicate.class, Object.class)).setAccessible(true);
 		//
 		(METHOD_STREAM = clz.getDeclaredMethod("stream", Collection.class)).setAccessible(true);
+		//
+		(METHOD_DECODE = clz.getDeclaredMethod("decode", Decoder.class, String.class)).setAccessible(true);
 		//
 	}
 
@@ -688,6 +690,13 @@ class MainServletTest {
 		//
 		Assert.assertNull(invoke(METHOD_COLLECT, null,
 				Reflection.newProxy(Stream.class, ObjectUtils.getIfNull(ih, IH::new)), null));
+		//
+	}
+
+	@Test
+	void testDecoder() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(invoke(METHOD_DECODE, null, Base64.getDecoder(), null));
 		//
 	}
 
