@@ -1,4 +1,19 @@
 <html>
 	<head></head>
-	<body><#if request?? && request.servletPath?? && request.servletPath?is_string>${request.servletPath[1..]}</#if></body>
+	<body>
+		<fieldset style="width:1px">
+			<legend><#if request?? && request.servletPath?? && request.servletPath?is_string>${request.servletPath[1..]}</#if></legend>
+			<form method="post" action=""<#if request??>${request.scheme!""}</#if>://<#if request?? && request.serverName??>${request.serverName}</#if>:<#if request??>${request.serverPort?c}</#if><#if request?? && request.servletPath??>${request.servletPath}</#if>"">
+				<table>
+					<tbody>
+						<tr><td>Input</td><td><input name="input" value="<#if request??>${request.getParameter("input")!""}</#if>" style="width:100%"/></td></tr>
+						<tr><td>&nbsp;</td><td><input type="submit"/></td></tr>
+						<#if output??>
+							<tr style="vertical-align:top"><td>Output</td><td><textarea>${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
+						</#if>
+					</tbody>
+				</able>
+			</form>	
+		</fieldset>
+	</body>
 </html>

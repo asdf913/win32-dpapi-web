@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -13,6 +14,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64.Encoder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -94,7 +96,7 @@ class MainServletTest {
 				//
 			} else if (proxy instanceof ServletRequest) {
 				//
-				if (contains(Arrays.asList("getScheme", "getServerName"), name)) {
+				if (contains(Arrays.asList("getScheme", "getServerName", "getParameter"), name)) {
 					//
 					return null;
 					//
@@ -330,7 +332,7 @@ class MainServletTest {
 	}
 
 	@Test
-	void testNull() {
+	void testNull() throws Throwable {
 		//
 		final Method[] ms = MainServlet.class.getDeclaredMethods();
 		//
@@ -340,26 +342,51 @@ class MainServletTest {
 		//
 		Object result = null;
 		//
+		Collection<Object> collection = null;
+		//
+		Class<?>[] parameterTypes = null;
+		//
+		String toString = null;
+		//
 		for (int i = 0; ms != null && i < ms.length; i++) {
 			//
-			if ((m = ArrayUtils.get(ms, i)) == null || m.isSynthetic()) {
+			if ((m = ArrayUtils.get(ms, i)) == null || m.isSynthetic()
+					|| (parameterTypes = m.getParameterTypes()) == null) {
 				//
 				continue;
 				//
 			} // if
 				//
-			os = toArray(Collections.nCopies(m.getParameterCount(), null));
+			clear(collection = ObjectUtils.getIfNull(collection, ArrayList::new));
+			//
+			for (int j = 0; j < parameterTypes.length; j++) {
+				//
+				if (Objects.equals(ArrayUtils.get(parameterTypes, j), Integer.TYPE)) {
+					//
+					add(collection, Integer.valueOf(0));
+					//
+				} else {
+					//
+					add(collection, null);
+					//
+				} // if
+					//
+			} // for
+				//
+			os = toArray(collection);
 			//
 			result = Modifier.isStatic(m.getModifiers()) ? Narcissus.invokeStaticMethod(m, os)
 					: Narcissus.invokeMethod(instance, m, os);
 			//
-			if (Objects.equals(m.getReturnType(), Boolean.TYPE)) {
+			toString = Objects.toString(m);
+			//
+			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), m.getReturnType())) {
 				//
-				AssertJUnit.assertNotNull(result);
+				Assert.assertNotNull(result, toString);
 				//
 			} else {
 				//
-				AssertJUnit.assertNull(result);
+				Assert.assertNull(result, toString);
 				//
 			} // if
 				//
@@ -431,6 +458,18 @@ class MainServletTest {
 					//
 					add(collection, Narcissus.allocateInstance(StringWriter.class));
 					//
+				} else if (Objects.equals(parameterType, Class.class)) {
+					//
+					add(collection, Class.class);
+					//
+				} else if (Objects.equals(parameterType, Integer.TYPE)) {
+					//
+					add(collection, Integer.valueOf(0));
+					//
+				} else if (parameterType != null && parameterType.isArray()) {
+					//
+					add(collection, Array.newInstance(parameterType.getComponentType(), 0));
+					//
 				} else {
 					//
 					add(collection, Narcissus.allocateInstance(parameterType));
@@ -446,13 +485,17 @@ class MainServletTest {
 			//
 			toString = Objects.toString(m);
 			//
-			if (Objects.equals(m.getReturnType(), Boolean.TYPE)
+			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), m.getReturnType())
 					|| Boolean.logicalAnd(Objects.equals(name = getName(m), "getClass"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Object.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "filter"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class, Predicate.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "sorted"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class }))) {
+							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "getName"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "encodeToString"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Encoder.class, byte[].class }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -578,6 +621,57 @@ class MainServletTest {
 					instance.init();
 					//
 					instance.doGet(httpServletRequest, httpServletResponse);
+					//
+				} // for
+					//
+			} // if
+				//
+		} // try
+			//
+	}
+
+	@Test
+	void testDoPost() throws ServletException, IOException {
+		//
+		if (instance == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		try (final PrintWriter writer = new PrintWriter(new StringWriter())) {
+			//
+			if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+				//
+				ih.writer = writer;
+				//
+				ih.serverPort = Integer.valueOf(8080);
+				//
+			} // if
+				//
+			final HttpServletResponse httpServletResponse = Reflection.newProxy(HttpServletResponse.class, ih);
+			//
+			instance.doGet(null, httpServletResponse);
+			//
+			if (strings != null && strings.iterator() != null) {
+				//
+				HttpServletRequest httpServletRequest = null;
+				//
+				for (final String string : strings) {
+					//
+					if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+						//
+						ih.servletPath = string;
+						//
+					} // if
+						//
+					if (httpServletRequest == null) {
+						//
+						httpServletRequest = Reflection.newProxy(HttpServletRequest.class, ih);
+						//
+					} // if
+						//
+					instance.doPost(httpServletRequest, httpServletResponse);
 					//
 				} // for
 					//
