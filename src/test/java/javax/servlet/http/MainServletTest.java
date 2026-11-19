@@ -57,7 +57,7 @@ import io.github.toolfactory.narcissus.Narcissus;
 class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
-			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST = null;
+			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -82,6 +82,8 @@ class MainServletTest {
 		(METHOD_GET_PARAMETER_TYPES = clz.getDeclaredMethod("getParameterTypes", Executable.class)).setAccessible(true);
 		//
 		(METHOD_CAST = clz.getDeclaredMethod("cast", Class.class, Object.class)).setAccessible(true);
+		//
+		(METHOD_VALUE_OF = clz.getDeclaredMethod("valueOf", String.class)).setAccessible(true);
 		//
 	}
 
@@ -381,6 +383,8 @@ class MainServletTest {
 		//
 		Class<?>[] parameterTypes = null;
 		//
+		Class<?> parameterType = null;
+		//
 		String toString = null;
 		//
 		for (int i = 0; ms != null && i < ms.length; i++) {
@@ -396,9 +400,13 @@ class MainServletTest {
 			//
 			for (int j = 0; j < parameterTypes.length; j++) {
 				//
-				if (Objects.equals(ArrayUtils.get(parameterTypes, j), Integer.TYPE)) {
+				if (Objects.equals(parameterType = ArrayUtils.get(parameterTypes, j), Integer.TYPE)) {
 					//
 					add(collection, Integer.valueOf(0));
+					//
+				} else if (Objects.equals(parameterType, Character.TYPE)) {
+					//
+					add(collection, Character.valueOf(' '));
 					//
 				} else {
 					//
@@ -506,6 +514,10 @@ class MainServletTest {
 				} else if (Objects.equals(parameterType, Integer.TYPE)) {
 					//
 					add(collection, Integer.valueOf(0));
+					//
+				} else if (Objects.equals(parameterType, Character.TYPE)) {
+					//
+					add(collection, Character.valueOf(' '));
 					//
 				} else if (Objects.equals(parameterType, ClassLoader.class)) {
 					//
@@ -755,6 +767,17 @@ class MainServletTest {
 		//
 		Assert.assertNull(invoke(METHOD_COLLECT, null,
 				Reflection.newProxy(Stream.class, ObjectUtils.getIfNull(ih, IH::new)), null));
+		//
+	}
+
+	@Test
+	void testValueOf() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(invoke(METHOD_VALUE_OF, null, "A"));
+		//
+		final int one = 1;
+		//
+		Assert.assertEquals(invoke(METHOD_VALUE_OF, null, Integer.toString(one)), Integer.valueOf(one));
 		//
 	}
 

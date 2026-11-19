@@ -1,6 +1,7 @@
 package javax.servlet.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Executable;
@@ -46,6 +47,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
@@ -61,6 +66,137 @@ import io.github.toolfactory.narcissus.Narcissus;
 public class MainServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 6334507409143321232L;
+
+	private static Integer DEFAULT_CRYPT_PROTECT_DATA_FLAGS, DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS;
+
+	private static class MethodVisitorImpl extends MethodVisitor {
+
+		private Integer integer = null;
+
+		private MethodVisitorImpl() {
+			//
+			super(Opcodes.ASM9);
+			//
+		}
+
+		@Override
+		public void visitInsn(final int opcode) {
+			//
+			if (opcode == Opcodes.ICONST_0) {
+				//
+				if (integer != null) {
+					//
+					throw new RuntimeException();
+					//
+				} // if
+					//
+				integer = Integer.valueOf(0);
+				//
+				return;
+				//
+			} else if (opcode == Opcodes.ARETURN) {
+				//
+				return;
+				//
+			} // if
+				//
+			throw new RuntimeException();
+			//
+		}
+
+	}
+
+	static {
+		//
+		final Class<?> clz = MainServlet.class;
+		//
+		final int api = Opcodes.ASM9;
+		//
+		try (final InputStream is = getResourceAsStream(clz,
+				StringUtils.join("/", replace(getName(Crypt32Util.class), '.', '/'), ".class"))) {
+			//
+			final ClassReader cr = testAndApply(Objects::nonNull, is, ClassReader::new, null);
+			//
+			if (cr != null) {
+				//
+				final MethodVisitorImpl mvi = new MethodVisitorImpl();
+				//
+				cr.accept(new ClassVisitor(api) {
+
+					@Override
+					public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
+							final String signature, final String[] exceptions) {
+						//
+						if (Boolean.logicalAnd(Objects.equals(name, "cryptProtectData"),
+								Objects.equals(descriptor, "([B)[B"))) {
+							//
+							return mvi;
+							//
+						} // if
+							//
+						return super.visitMethod(access, name, descriptor, signature, exceptions);
+						//
+					}
+
+				}, 0);
+				//
+				if (mvi.integer != null) {
+					//
+					DEFAULT_CRYPT_PROTECT_DATA_FLAGS = mvi.integer.intValue();
+					//
+				} // if
+					//
+			} // try
+				//
+		} catch (final IOException e) {
+			//
+			printStackTrace(e);
+			//
+		} // try
+			//
+		try (final InputStream is = getResourceAsStream(clz,
+				StringUtils.join("/", replace(getName(Crypt32Util.class), '.', '/'), ".class"))) {
+			//
+			final ClassReader cr = testAndApply(Objects::nonNull, is, ClassReader::new, null);
+			//
+			if (cr != null) {
+				//
+				final MethodVisitorImpl mvi = new MethodVisitorImpl();
+				//
+				cr.accept(new ClassVisitor(api) {
+
+					@Override
+					public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
+							final String signature, final String[] exceptions) {
+						//
+						if (Boolean.logicalAnd(Objects.equals(name, "cryptUnprotectData"),
+								Objects.equals(descriptor, "([B)[B"))) {
+							//
+							return mvi;
+							//
+						} // if
+							//
+						return super.visitMethod(access, name, descriptor, signature, exceptions);
+						//
+					}
+
+				}, 0);
+				//
+				if (mvi.integer != null) {
+					//
+					DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS = mvi.integer.intValue();
+					//
+				} // if
+					//
+			} // try
+				//
+		} catch (final IOException e) {
+			//
+			printStackTrace(e);
+			//
+		} // try
+			//
+	}
 
 	private Configuration configuration = null;
 
@@ -129,6 +265,9 @@ public class MainServlet extends HttpServlet {
 					map.put("encodings", encodings);
 					//
 					map.put("encoding", "base64");
+					//
+					map.put("flags", Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
+							: DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS);
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -410,14 +549,34 @@ public class MainServlet extends HttpServlet {
 					//
 					final RandomUtils randomUtils = RandomUtils.secure();
 					//
-					map.put("output", testAndApply(Objects::nonNull,
-							testAndApply(Objects::nonNull, isWindows() ? testAndApply(x -> x != null,
-									getBytes(getParameter(request, "input")), Crypt32Util::cryptProtectData, null)
-									: randomBytes(randomUtils, randomInt(randomUtils, 1, 100)),
-									x -> encode(cast(BinaryEncoder.class,
-											newInstance(MapUtils.getObject(encodingMap, encoding))), x),
-									null),
-							String::new, null));
+					byte[] output = null;
+					//
+					if (isWindows()) {
+						//
+						final byte[] input = getBytes(getParameter(request, "input"));
+						//
+						final Integer flags = valueOf(getParameter(request, "flags"));
+						//
+						if (input != null) {
+							//
+							output = flags != null ? Crypt32Util.cryptProtectData(input, flags.intValue())
+									: Crypt32Util.cryptProtectData(input);
+							//
+						} // if
+							//
+					} else {
+						//
+						output = randomBytes(randomUtils, randomInt(randomUtils, 1, 100));
+						//
+					} // if
+						//
+					map.put("output",
+							testAndApply(Objects::nonNull,
+									testAndApply(Objects::nonNull, output,
+											x -> encode(cast(BinaryEncoder.class,
+													newInstance(MapUtils.getObject(encodingMap, encoding))), x),
+											null),
+									String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -446,18 +605,30 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encoding", encoding);
 					//
-					map.put("output",
-							testAndApply(Objects::nonNull,
-									isWindows()
-											? testAndApply(
-													x -> x != null, decode(
-															cast(BinaryDecoder.class,
-																	newInstance(
-																			MapUtils.getObject(encodingMap, encoding))),
-															getBytes(getParameter(request, "input"))),
-													Crypt32Util::cryptUnprotectData, null)
-											: getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100)),
-									String::new, null));
+					byte[] output = null;
+					//
+					if (isWindows()) {
+						//
+						final byte[] input = decode(
+								cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
+								getBytes(getParameter(request, "input")));
+						//
+						final Integer flags = valueOf(getParameter(request, "flags"));
+						//
+						if (input != null) {
+							//
+							output = flags != null ? Crypt32Util.cryptUnprotectData(input, flags.intValue())
+									: Crypt32Util.cryptUnprotectData(input);
+							//
+						} // if
+							//
+					} else {
+						//
+						output = getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100));
+						//
+					} // if
+						//
+					map.put("output", testAndApply(Objects::nonNull, output, String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -469,6 +640,32 @@ public class MainServlet extends HttpServlet {
 					//
 			} // if
 				//
+		} // try
+			//
+	}
+
+	private static Integer valueOf(final String instance) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		try {
+			//
+			return field == null || Narcissus.getField(instance, field) != null ? Integer.valueOf(instance) : null;
+			//
+		} catch (final NumberFormatException e) {
+			//
+			return null;
+			//
 		} // try
 			//
 	}
@@ -734,6 +931,48 @@ public class MainServlet extends HttpServlet {
 
 	private static boolean contains(final Collection<?> instance, final Object item) {
 		return instance != null && instance.contains(item);
+	}
+
+	private static InputStream getResourceAsStream(final Class<?> clz, final String name) {
+		//
+		if (clz == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(name), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(name, field) != null ? clz.getResourceAsStream(name) : null;
+		//
+	}
+
+	private static String replace(final String instance, final char oldChar, final char newChar) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null ? instance.replace(oldChar, newChar) : null;
+		//
+	}
+
+	private static void printStackTrace(final Throwable instance) {
+		if (instance != null) {
+			instance.printStackTrace();
+		}
 	}
 
 }
