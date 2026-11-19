@@ -9,7 +9,7 @@
 						<tr><td>Input</td><td><input name="input" value="<#if request??>${request.getParameter("input")!""}</#if>" style="field-sizing:content;resize:none;width:92vw;box-sizing:border-box"/></td></tr>
 						<tr><td>&nbsp;</td><td><input type="submit"/></td></tr>
 						<#if output??>
-							<tr style="vertical-align:top"><td>Output</td><td><textarea style="field-sizing:content;resize:none;max-width:92vw;box-sizing:border-box">${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
+							<tr style="vertical-align:top"><td>Output</td><td><textarea style="field-sizing:content;resize:none;width:92vw;box-sizing:border-box">${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
 						</#if>
 					</tbody>
 				</able>
