@@ -87,6 +87,8 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("request", request);
 					//
+					map.put("isWindows", Boolean.valueOf(isWindows()));
+					//
 					process(getTemplate(configuration, "index.ftl"), map, writer);
 					//
 				} catch (final TemplateException e) {
