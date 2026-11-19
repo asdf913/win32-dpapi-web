@@ -65,7 +65,7 @@ public class MainServlet extends HttpServlet {
 	protected void doGet(final HttpServletRequest request, final HttpServletResponse response)
 			throws ServletException, IOException {
 		//
-		final String servletPath = request != null ? request.getServletPath() : null;
+		final String servletPath = getServletPath(request);
 		//
 		try (final Writer writer = response != null ? response.getWriter() : null) {
 			//
@@ -110,11 +110,15 @@ public class MainServlet extends HttpServlet {
 			//
 	}
 
+	private static String getServletPath(final HttpServletRequest instance) {
+		return instance != null ? instance.getServletPath() : null;
+	}
+
 	@Override
 	protected void doPost(final HttpServletRequest request, final HttpServletResponse response)
 			throws ServletException, IOException {
 		//
-		final String servletPath = request != null ? request.getServletPath() : null;
+		final String servletPath = getServletPath(request);
 		//
 		try (final Writer writer = response != null ? response.getWriter() : null) {
 			//
