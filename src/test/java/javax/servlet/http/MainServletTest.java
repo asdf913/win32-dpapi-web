@@ -246,7 +246,7 @@ class MainServletTest {
 									//
 								} // if
 									//
-							};
+							}
 						};
 						//
 					} // if
