@@ -76,6 +76,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String FLAGS = "flags";
 
+	private static final String ENCODINGS = "encodings";
+
 	private static final String ENCODING = "encoding";
 
 	@Target(ElementType.FIELD)
@@ -282,7 +284,7 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put("encodings", encodings);
+					map.put(ENCODINGS, encodings);
 					//
 					map.put(ENCODING, "base64");
 					//
@@ -561,7 +563,7 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put("encodings", encodings);
+					map.put(ENCODINGS, encodings);
 					//
 					final String encoding = getParameter(request, ENCODING);
 					//
@@ -628,7 +630,7 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put("encodings", encodings);
+					map.put(ENCODINGS, encodings);
 					//
 					final String encoding = getParameter(request, ENCODING);
 					//
