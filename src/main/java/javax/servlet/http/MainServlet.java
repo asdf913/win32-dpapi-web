@@ -76,6 +76,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String FLAGS = "flags";
 
+	private static final String ENCODING = "encoding";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -282,7 +284,7 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encodings", encodings);
 					//
-					map.put("encoding", "base64");
+					map.put(ENCODING, "base64");
 					//
 					map.put(FLAGS, Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
 							: DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS);
@@ -561,9 +563,9 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encodings", encodings);
 					//
-					final String encoding = getParameter(request, "encoding");
+					final String encoding = getParameter(request, ENCODING);
 					//
-					map.put("encoding", encoding);
+					map.put(ENCODING, encoding);
 					//
 					final List<Method> ms = collect(filter(
 							testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream,
@@ -628,9 +630,9 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encodings", encodings);
 					//
-					final String encoding = getParameter(request, "encoding");
+					final String encoding = getParameter(request, ENCODING);
 					//
-					map.put("encoding", encoding);
+					map.put(ENCODING, encoding);
 					//
 					byte[] output = null;
 					//
