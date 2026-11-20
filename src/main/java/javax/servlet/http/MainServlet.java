@@ -582,34 +582,13 @@ public class MainServlet extends HttpServlet {
 							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
 							Narcissus::invokeStaticMethod, null));
 					//
-					byte[] output = null;
-					//
-					if (isWindows()) {
-						//
-						final byte[] input = getBytes(getParameter(request, "input"));
-						//
-						final Integer flags = valueOf(getParameter(request, FLAGS));
-						//
-						if (input != null) {
-							//
-							output = flags != null ? Crypt32Util.cryptProtectData(input, flags.intValue())
-									: Crypt32Util.cryptProtectData(input);
-							//
-						} // if
-							//
-					} else {
-						//
-						output = randomBytes(randomUtils, randomInt(randomUtils, 1, 100));
-						//
-					} // if
-						//
 					map.put("output",
-							testAndApply(Objects::nonNull,
-									testAndApply(Objects::nonNull, output,
-											x -> encode(cast(BinaryEncoder.class,
-													newInstance(MapUtils.getObject(encodingMap, encoding))), x),
-											null),
-									String::new, null));
+							testAndApply(Objects::nonNull, testAndApply(Objects::nonNull, cryptProtectData(
+									getBytes(getParameter(request, "input")), valueOf(getParameter(request, FLAGS)),
+									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
+									x -> encode(cast(BinaryEncoder.class,
+											newInstance(MapUtils.getObject(encodingMap, encoding))), x),
+									null), String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -656,6 +635,25 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static byte[] cryptProtectData(final byte[] input, final Integer flags, final Supplier<byte[]> supplier) {
+		//
+		if (isWindows()) {
+			//
+			if (input == null) {
+				//
+				return null;
+				//
+			} // if
+				//
+			return flags != null ? Crypt32Util.cryptProtectData(input, flags.intValue())
+					: Crypt32Util.cryptProtectData(input);
+			//
+		} // if
+			//
+		return supplier != null ? supplier.get() : null;
+		//
 	}
 
 	private static byte[] cryptUnprotectData(final byte[] input, final Integer flags, final Supplier<byte[]> supplier) {
