@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -67,7 +71,16 @@ public class MainServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 6334507409143321232L;
 
-	private static Integer DEFAULT_CRYPT_PROTECT_DATA_FLAGS, DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS;
+	@Target(ElementType.FIELD)
+	@Retention(RetentionPolicy.RUNTIME)
+	private @interface Note {
+		String value();
+	}
+
+	@Note("cryptProtect")
+	private static Integer DEFAULT_CRYPT_PROTECT_DATA_FLAGS;
+
+	private static Integer DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS;
 
 	private static class MethodVisitorImpl extends MethodVisitor {
 
