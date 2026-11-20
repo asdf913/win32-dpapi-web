@@ -27,6 +27,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -637,30 +638,11 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put(ENCODING, encoding);
 					//
-					byte[] output = null;
-					//
-					if (isWindows()) {
-						//
-						final byte[] input = decode(
-								cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-								getBytes(getParameter(request, "input")));
-						//
-						final Integer flags = valueOf(getParameter(request, FLAGS));
-						//
-						if (input != null) {
-							//
-							output = flags != null ? Crypt32Util.cryptUnprotectData(input, flags.intValue())
-									: Crypt32Util.cryptUnprotectData(input);
-							//
-						} // if
-							//
-					} else {
-						//
-						output = getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100));
-						//
-					} // if
-						//
-					map.put("output", testAndApply(Objects::nonNull, output, String::new, null));
+					map.put("output", testAndApply(Objects::nonNull, cryptUnprotectData(
+							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
+									getBytes(getParameter(request, "input"))),
+							valueOf(getParameter(request, FLAGS)),
+							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -674,6 +656,25 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static byte[] cryptUnprotectData(final byte[] input, final Integer flags, final Supplier<byte[]> supplier) {
+		//
+		if (isWindows()) {
+			//
+			if (input == null) {
+				//
+				return null;
+				//
+			} // if
+				//
+			return flags != null ? Crypt32Util.cryptUnprotectData(input, flags.intValue())
+					: Crypt32Util.cryptUnprotectData(input);
+			//
+		} // if
+			//
+		return supplier != null ? supplier.get() : null;
+		//
 	}
 
 	private static int getParameterCount(final Executable instance) {

@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.MatchResult;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -187,6 +188,10 @@ class MainServletTest {
 				return null;
 				//
 			} else if (proxy instanceof Map && Objects.equals(name, "keySet")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof Supplier && Objects.equals(name, "get")) {
 				//
 				return null;
 				//
