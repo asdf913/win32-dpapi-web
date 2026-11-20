@@ -849,8 +849,7 @@ public class MainServlet extends HttpServlet {
 		return instance != null ? instance.getMessage() : null;
 	}
 
-	private static Template getTemplate(final Configuration instance, final String name)
-			throws ParseException, IOException {
+	private static Template getTemplate(final Configuration instance, final String name) throws IOException {
 		//
 		if (instance == null) {
 			//
