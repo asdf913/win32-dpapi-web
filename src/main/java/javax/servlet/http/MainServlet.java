@@ -553,6 +553,12 @@ public class MainServlet extends HttpServlet {
 		//
 		try (final Writer writer = getWriter(response)) {
 			//
+			final byte[] input = getBytes(getParameter(request, "input"));
+			//
+			final Integer flags = valueOf(getParameter(request, FLAGS));
+			//
+			final byte[] entropy = getBytes(getParameter(request, "entropy"));
+			//
 			if (Objects.equals(servletPath, "/cryptProtectData")) {
 				//
 				try {
@@ -582,11 +588,8 @@ public class MainServlet extends HttpServlet {
 							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
 							Narcissus::invokeStaticMethod, null));
 					//
-					map.put("output", testAndApply(Objects::nonNull, testAndApply(
-							Objects::nonNull,
-							cryptProtectData(
-									getBytes(getParameter(request, "input")), valueOf(getParameter(request, FLAGS)),
-									getBytes(getParameter(request, "entropy")),
+					map.put("output", testAndApply(Objects::nonNull, testAndApply(Objects::nonNull,
+							cryptProtectData(input, flags, entropy,
 									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
 							x -> encode(
 									cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
@@ -622,9 +625,9 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("output", testAndApply(Objects::nonNull, cryptUnprotectData(
 							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-									getBytes(getParameter(request, "input"))),
-							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, "entropy")),
-							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
+									input),
+							flags, entropy, () -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
+							String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
