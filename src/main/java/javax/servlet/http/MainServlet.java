@@ -582,13 +582,16 @@ public class MainServlet extends HttpServlet {
 							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
 							Narcissus::invokeStaticMethod, null));
 					//
-					map.put("output",
-							testAndApply(Objects::nonNull, testAndApply(Objects::nonNull, cryptProtectData(
+					map.put("output", testAndApply(Objects::nonNull, testAndApply(
+							Objects::nonNull,
+							cryptProtectData(
 									getBytes(getParameter(request, "input")), valueOf(getParameter(request, FLAGS)),
+									getBytes(getParameter(request, "entropy")),
 									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
-									x -> encode(cast(BinaryEncoder.class,
-											newInstance(MapUtils.getObject(encodingMap, encoding))), x),
-									null), String::new, null));
+							x -> encode(
+									cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
+									x),
+							null), String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -620,7 +623,7 @@ public class MainServlet extends HttpServlet {
 					map.put("output", testAndApply(Objects::nonNull, cryptUnprotectData(
 							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
 									getBytes(getParameter(request, "input"))),
-							valueOf(getParameter(request, FLAGS)),
+							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, "entropy")),
 							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
@@ -637,7 +640,8 @@ public class MainServlet extends HttpServlet {
 			//
 	}
 
-	private static byte[] cryptProtectData(final byte[] input, final Integer flags, final Supplier<byte[]> supplier) {
+	private static byte[] cryptProtectData(final byte[] input, final Integer flags, final byte[] entropy,
+			final Supplier<byte[]> supplier) {
 		//
 		if (isWindows()) {
 			//
@@ -647,8 +651,14 @@ public class MainServlet extends HttpServlet {
 				//
 			} // if
 				//
-			return flags != null ? Crypt32Util.cryptProtectData(input, flags.intValue())
-					: Crypt32Util.cryptProtectData(input);
+			if (flags != null) {
+				//
+				return entropy != null ? Crypt32Util.cryptProtectData(input, entropy, flags, null, null)
+						: Crypt32Util.cryptProtectData(input, flags.intValue());
+				//
+			} // if
+				//
+			return Crypt32Util.cryptProtectData(input);
 			//
 		} // if
 			//
@@ -656,9 +666,11 @@ public class MainServlet extends HttpServlet {
 		//
 	}
 
-	private static byte[] cryptUnprotectData(final byte[] input, final Integer flags, final Supplier<byte[]> supplier) {
+	private static byte[] cryptUnprotectData(final byte[] input, final Integer flags, final byte[] entropy,
+			final Supplier<byte[]> supplier) {
 		//
 		if (isWindows()) {
+
 			//
 			if (input == null) {
 				//
@@ -666,8 +678,14 @@ public class MainServlet extends HttpServlet {
 				//
 			} // if
 				//
-			return flags != null ? Crypt32Util.cryptUnprotectData(input, flags.intValue())
-					: Crypt32Util.cryptUnprotectData(input);
+			if (flags != null) {
+				//
+				return entropy != null ? Crypt32Util.cryptUnprotectData(input, entropy, flags, null)
+						: Crypt32Util.cryptUnprotectData(input, flags.intValue());
+				//
+			} // if
+				//
+			return Crypt32Util.cryptUnprotectData(input);
 			//
 		} // if
 			//
