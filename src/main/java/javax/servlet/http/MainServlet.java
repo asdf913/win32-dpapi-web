@@ -547,7 +547,18 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encoding", encoding);
 					//
-					final RandomUtils randomUtils = RandomUtils.secure();
+					final List<Method> ms = collect(filter(
+							testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream,
+									null),
+							m -> m != null && Boolean.logicalAnd(Objects.equals(getName(m), "secure"),
+									m.getParameterCount() == 0)),
+							Collectors.toList());
+					//
+					final RandomUtils randomUtils = cast(RandomUtils.class,
+							testAndApply(
+									m -> isStatic(m), testAndApply(x -> IterableUtils.size(x) == 1, ms,
+											x -> IterableUtils.get(x, 0), null),
+									m -> Narcissus.invokeStaticMethod(m), null));
 					//
 					byte[] output = null;
 					//
