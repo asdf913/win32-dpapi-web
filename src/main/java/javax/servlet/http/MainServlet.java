@@ -70,6 +70,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 6334507409143321232L;
 
+	private static final String RANDOM = "random";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -767,7 +769,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "random")), Collectors.toList()),
+						f -> Objects.equals(getName(f), RANDOM)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null
@@ -787,7 +789,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "random")), Collectors.toList()),
+						f -> Objects.equals(getName(f), RANDOM)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null ? instance.randomBytes(size) : null;
@@ -805,7 +807,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "random")), Collectors.toList()),
+						f -> Objects.equals(getName(f), RANDOM)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null
