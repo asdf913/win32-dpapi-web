@@ -567,7 +567,7 @@ public class MainServlet extends HttpServlet {
 									m.getParameterCount() == 0)),
 							Collectors.toList());
 					//
-					final RandomUtils randomUtils = cast(RandomUtils.class, testAndApply(m -> isStatic(m),
+					final RandomUtils randomUtils = cast(RandomUtils.class, testAndApply(MainServlet::isStatic,
 							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
 							Narcissus::invokeStaticMethod, null));
 					//
