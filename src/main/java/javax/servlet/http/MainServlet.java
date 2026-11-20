@@ -80,6 +80,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String ENCODING = "encoding";
 
+	private static final String REQUEST = "request";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -261,7 +263,7 @@ public class MainServlet extends HttpServlet {
 											MainServlet::getName)),
 									Collectors.toList())));
 					//
-					map.put("request", request);
+					map.put(REQUEST, request);
 					//
 					map.put("isWindows", Boolean.valueOf(isWindows()));
 					//
@@ -277,7 +279,7 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
+					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
 					//
 					final String[] encodings = toArray(
 							keySet(getEncodingMap(getContextClassLoader(Thread.currentThread()))), new String[] {});
@@ -554,7 +556,7 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
+					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
 					//
 					final Map<String, Class<?>> encodingMap = getEncodingMap(
 							getContextClassLoader(Thread.currentThread()));
@@ -621,7 +623,7 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap("request", request));
+					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
 					//
 					final Map<String, Class<?>> encodingMap = getEncodingMap(
 							getContextClassLoader(Thread.currentThread()));
