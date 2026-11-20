@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -22,6 +23,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -61,63 +63,72 @@ public class Main {
 
 	private static Map<String, String> toMap(final String... ss) {
 		//
-		String s = null;
-		//
 		Map<String, String> map = null;
 		//
-		Field field = null;
+		Entry<String, String> entry = null;
 		//
 		for (int i = 0; i < length(ss); i++) {
 			//
-			if ((s = ArrayUtils.get(ss, i)) == null) {
+			if ((entry = toEntry(ArrayUtils.get(ss, i))) == null) {
 				//
 				continue;
 				//
 			} // if
 				//
-			if (field == null) {
-				//
-				field = testAndApply(x -> IterableUtils.size(x) == 1,
-						collect(filter(
-								stream(testAndApply(Objects::nonNull, getClass(s), FieldUtils::getAllFieldsList, null)),
-								x -> Objects.equals(getName(x), "value")), Collectors.toList()),
-						x -> IterableUtils.get(x, 0), null);
-				//
-			} // if
-				//
-			if (field != null && Narcissus.getField(s, field) == null) {
-				//
-				continue;
-				//
-			} // if
-				//
-			if (Objects.equals(s, "=")) {
-				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", "");
-				//
-			} else if (s != null && s.length() == 2 && s.charAt(0) == '=') {
-				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", s.substring(1, s.length()));
-				//
-			} else if (s != null && s.length() == 2 && s.charAt(s.length() - 1) == '=') {
-				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), s.substring(0, s.length() - 1), "");
-				//
-			} else if (s != null && s.indexOf('=') >= 0 && s.indexOf('=') == s.lastIndexOf('=')) {
-				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substringBefore(s, '='),
-						StringUtils.substringAfter(s, '='));
-				//
-			} else if (s != null && s.length() > 2 && s.indexOf('=') != s.lastIndexOf('=')) {
-				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substring(s, 0, s.indexOf('=')),
-						StringUtils.substring(s, s.indexOf('=') + 1));
-				//
-			} // if
-				//
+			put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), getKey(entry), getValue(entry));
+			//
 		} // for
 			//
 		return map;
+		//
+	}
+
+	private static <K> K getKey(final Entry<K, ?> instance) {
+		return instance != null ? instance.getKey() : null;
+	}
+
+	private static <V> V getValue(final Entry<?, V> instance) {
+		return instance != null ? instance.getValue() : null;
+	}
+
+	private static Entry<String, String> toEntry(final String string) {
+		//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(string), FieldUtils::getAllFieldsList, null)),
+						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (string != null && field != null && Narcissus.getField(string, field) == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		if (Objects.equals(string, "=")) {
+			//
+			return Pair.of("", "");
+			//
+		} else if (string != null && string.length() == 2 && string.charAt(0) == '=') {
+			//
+			return Pair.of("", string.substring(1, string.length()));
+			//
+		} else if (string != null && string.length() == 2 && string.charAt(string.length() - 1) == '=') {
+			//
+			return Pair.of(string.substring(0, string.length() - 1), "");
+			//
+		} else if (string != null && string.indexOf('=') >= 0 && string.indexOf('=') == string.lastIndexOf('=')) {
+			//
+			return Pair.of(StringUtils.substringBefore(string, '='), StringUtils.substringAfter(string, '='));
+			//
+		} else if (string != null && string.length() > 2 && string.indexOf('=') != string.lastIndexOf('=')) {
+			//
+			return Pair.of(StringUtils.substring(string, 0, string.indexOf('=')),
+					StringUtils.substring(string, string.indexOf('=') + 1));
+			//
+		} // if
+			//
+		return null;
 		//
 	}
 

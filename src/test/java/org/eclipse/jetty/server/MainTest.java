@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -100,6 +101,10 @@ class MainTest {
 				} // if
 					//
 			} else if (proxy instanceof Collection && Objects.equals(name, "stream")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof Entry && contains(Arrays.asList("getKey", "getValue"), name)) {
 				//
 				return null;
 				//
