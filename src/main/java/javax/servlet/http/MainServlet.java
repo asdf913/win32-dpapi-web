@@ -72,6 +72,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String RANDOM = "random";
 
+	private static final String VALUE = "value";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -343,7 +345,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return (field == null || Narcissus.getField(instance, field) != null) ? instance.toLowerCase() : null;
@@ -383,7 +385,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		if (field != null && Narcissus.getField(regex, field) == null) {
@@ -455,7 +457,7 @@ public class MainServlet extends HttpServlet {
 		Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(stream(
 						testAndApply(Objects::nonNull, getClass(packageName), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		if (field != null && Narcissus.getField(packageName, field) == null) {
@@ -678,7 +680,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		try {
@@ -709,7 +711,7 @@ public class MainServlet extends HttpServlet {
 		//
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(stream(testAndApply(Objects::nonNull, getClass(a), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		if (field != null
@@ -839,7 +841,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+						f -> Objects.equals(getName(f), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null ? instance.getBytes() : null;
@@ -966,7 +968,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(name), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(name, field) != null ? clz.getResourceAsStream(name) : null;
@@ -984,7 +986,7 @@ public class MainServlet extends HttpServlet {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), "value")), Collectors.toList()),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null ? instance.replace(oldChar, newChar) : null;
