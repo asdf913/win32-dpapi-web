@@ -589,7 +589,7 @@ public class MainServlet extends HttpServlet {
 							Narcissus::invokeStaticMethod, null));
 					//
 					map.put("output", testAndApply(Objects::nonNull, testAndApply(Objects::nonNull,
-							cryptProtectData(input, flags, entropy,
+							cryptProtectData(input, flags, entropy, getParameter(request, "description"),
 									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
 							x -> encode(
 									cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
@@ -644,7 +644,7 @@ public class MainServlet extends HttpServlet {
 	}
 
 	private static byte[] cryptProtectData(final byte[] input, final Integer flags, final byte[] entropy,
-			final Supplier<byte[]> supplier) {
+			final String description, final Supplier<byte[]> supplier) {
 		//
 		if (isWindows()) {
 			//
@@ -656,7 +656,8 @@ public class MainServlet extends HttpServlet {
 				//
 			if (flags != null) {
 				//
-				return entropy != null ? Crypt32Util.cryptProtectData(input, entropy, flags, null, null)
+				return entropy != null || StringUtils.isNotEmpty(description)
+						? Crypt32Util.cryptProtectData(input, entropy, flags, description, null)
 						: Crypt32Util.cryptProtectData(input, flags.intValue());
 				//
 			} // if
