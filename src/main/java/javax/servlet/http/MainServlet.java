@@ -74,6 +74,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String VALUE = "value";
 
+	private static final String FLAGS = "flags";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -282,7 +284,7 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put("encoding", "base64");
 					//
-					map.put("flags", Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
+					map.put(FLAGS, Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
 							: DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS);
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
@@ -580,7 +582,7 @@ public class MainServlet extends HttpServlet {
 						//
 						final byte[] input = getBytes(getParameter(request, "input"));
 						//
-						final Integer flags = valueOf(getParameter(request, "flags"));
+						final Integer flags = valueOf(getParameter(request, FLAGS));
 						//
 						if (input != null) {
 							//
@@ -638,7 +640,7 @@ public class MainServlet extends HttpServlet {
 								cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
 								getBytes(getParameter(request, "input")));
 						//
-						final Integer flags = valueOf(getParameter(request, "flags"));
+						final Integer flags = valueOf(getParameter(request, FLAGS));
 						//
 						if (input != null) {
 							//
