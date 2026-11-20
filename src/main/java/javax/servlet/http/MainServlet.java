@@ -574,8 +574,7 @@ public class MainServlet extends HttpServlet {
 					final List<Method> ms = collect(filter(
 							testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream,
 									null),
-							m -> m != null && Boolean.logicalAnd(Objects.equals(getName(m), "secure"),
-									m.getParameterCount() == 0)),
+							m -> Boolean.logicalAnd(Objects.equals(getName(m), "secure"), getParameterCount(m) == 0)),
 							Collectors.toList());
 					//
 					final RandomUtils randomUtils = cast(RandomUtils.class, testAndApply(MainServlet::isStatic,
@@ -675,6 +674,26 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static int getParameterCount(final Executable instance) {
+		//
+		if (instance == null) {
+			//
+			return 0;
+			//
+		} // if
+			//
+		final Stream<Field> stream = testAndApply(Objects::nonNull,
+				testAndApply(Objects::nonNull, getClass(instance), Narcissus::getDeclaredFields, null), Arrays::stream,
+				null);
+		//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(stream, x -> Objects.equals(getName(x), "parameterTypes")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null ? instance.getParameterCount() : 0;
+		//
 	}
 
 	private static Integer valueOf(final String instance) {
