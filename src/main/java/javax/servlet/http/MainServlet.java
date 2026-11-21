@@ -659,6 +659,10 @@ public class MainServlet extends HttpServlet {
 									//
 								});
 						//
+					} catch (final Exception e) {
+						//
+						throwable = e;
+						//
 					} // try
 						//
 					map.put("throwable", throwable);
