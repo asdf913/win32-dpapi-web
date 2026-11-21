@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -61,6 +62,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
 import com.sun.jna.platform.win32.Crypt32Util;
+import com.sun.jna.platform.win32.Kernel32Util;
+import com.sun.jna.platform.win32.Win32Exception;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -623,11 +626,42 @@ public class MainServlet extends HttpServlet {
 					//
 					map.put(ENCODING, encoding);
 					//
-					map.put("output", testAndApply(Objects::nonNull, cryptUnprotectData(
-							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-									input),
-							flags, entropy, () -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
-							String::new, null));
+					Throwable throwable = null;
+					//
+					try {
+						//
+						map.put("output",
+								testAndApply(Objects::nonNull, cryptUnprotectData(
+										decode(cast(BinaryDecoder.class,
+												newInstance(MapUtils.getObject(encodingMap, encoding))), input),
+										flags, entropy,
+										() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
+										String::new, null));
+						//
+					} catch (final Win32Exception e) {
+						//
+						final List<Field> fs = collect(
+								filter(testAndApply(Objects::nonNull, Narcissus.getDeclaredFields(Throwable.class),
+										Arrays::stream, null),
+										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, f.getType())),
+								Collectors.toList());
+						//
+						final Field f = testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0),
+								null);
+						//
+						testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable = e,
+								testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0), null),
+								(a, b) -> {
+									//
+									Narcissus.setField(a, b,
+											e != null ? Kernel32Util.formatMessage(e.getErrorCode(), 1033, 0)
+													: Narcissus.getField(a, b));
+									//
+								});
+						//
+					} // try
+						//
+					map.put("throwable", throwable);
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
@@ -695,6 +729,13 @@ public class MainServlet extends HttpServlet {
 			//
 		return supplier != null ? supplier.get() : null;
 		//
+	}
+
+	private static <T, U> void testAndAccept(final BiPredicate<T, U> predicate, final T t, final U u,
+			final BiConsumer<T, U> consumer) {
+		if (predicate != null && predicate.test(t, u) && consumer != null) {
+			consumer.accept(t, u);
+		}
 	}
 
 	private static int getParameterCount(final Executable instance) {

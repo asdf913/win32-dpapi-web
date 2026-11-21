@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
@@ -58,7 +59,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
-			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF = null;
+			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
+			METHOD_TEST_AND_ACCEPT = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -86,6 +88,9 @@ class MainServletTest {
 		//
 		(METHOD_VALUE_OF = clz.getDeclaredMethod("valueOf", String.class)).setAccessible(true);
 		//
+		(METHOD_TEST_AND_ACCEPT = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
+				BiConsumer.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
@@ -101,6 +106,12 @@ class MainServletTest {
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
 			//
+			if (Objects.equals(getReturnType(method), Void.TYPE)) {
+				//
+				return null;
+				//
+			} // if
+				//
 			final String name = getName(method);
 			//
 			if (Objects.equals(name, "toString") && method != null && method.getParameterCount() == 0) {
@@ -220,6 +231,10 @@ class MainServletTest {
 		//
 		strings = getStrings(clz);
 		//
+	}
+
+	private static Class<?> getReturnType(final Method instance) throws Throwable {
+		return instance != null ? instance.getReturnType() : null;
 	}
 
 	private static Collection<String> getStrings(final Class<?> clz) throws Throwable {
@@ -430,7 +445,7 @@ class MainServletTest {
 			//
 			toString = Objects.toString(m);
 			//
-			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), m.getReturnType())) {
+			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), getReturnType(m))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -553,7 +568,7 @@ class MainServletTest {
 			//
 			toString = Objects.toString(m);
 			//
-			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), m.getReturnType())
+			if (contains(Arrays.asList(Boolean.TYPE, Integer.TYPE), getReturnType(m))
 					|| Boolean.logicalAnd(Objects.equals(name = getName(m), "getClass"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Object.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "filter"),
@@ -785,6 +800,29 @@ class MainServletTest {
 		final int one = 1;
 		//
 		Assert.assertEquals(invoke(METHOD_VALUE_OF, null, Integer.toString(one)), Integer.valueOf(one));
+		//
+	}
+
+	@Test
+	void testTestAndAccept() throws IllegalAccessException, InvocationTargetException {
+		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.test = Boolean.TRUE;
+			//
+		} // if
+			//
+		final BiPredicate<?, ?> biPredicate = Reflection.newProxy(BiPredicate.class, ih);
+		//
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
+		//
+		if (ih != null) {
+			//
+			ih.test = Boolean.FALSE;
+			//
+		} // if
+			//
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
 		//
 	}
 
