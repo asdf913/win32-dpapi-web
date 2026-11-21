@@ -64,6 +64,7 @@ import com.google.common.reflect.ClassPath.ClassInfo;
 import com.sun.jna.platform.win32.Crypt32Util;
 import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.Win32Exception;
+import com.sun.jna.platform.win32.WinNT;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -651,7 +652,11 @@ public class MainServlet extends HttpServlet {
 								(a, b) -> {
 									//
 									Narcissus.setField(a, b,
-											e != null ? Kernel32Util.formatMessage(e.getErrorCode(), 1033, 0)
+											e != null
+													? Kernel32Util.formatMessage(e.getErrorCode(),
+															WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
+																	WinNT.SUBLANG_ENGLISH_US),
+															0)
 													: Narcissus.getField(a, b));
 									//
 								});
