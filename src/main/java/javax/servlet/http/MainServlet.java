@@ -646,9 +646,6 @@ public class MainServlet extends HttpServlet {
 										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, f.getType())),
 								Collectors.toList());
 						//
-						final Field f = testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0),
-								null);
-						//
 						testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable = e,
 								testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0), null),
 								(a, b) -> {
