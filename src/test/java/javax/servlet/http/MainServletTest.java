@@ -63,7 +63,7 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT, METHOD_SHORT_VALUE = null;
+			METHOD_TEST_AND_ACCEPT = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -93,8 +93,6 @@ class MainServletTest {
 		//
 		(METHOD_TEST_AND_ACCEPT = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
 				BiConsumer.class)).setAccessible(true);
-		//
-		(METHOD_SHORT_VALUE = clz.getDeclaredMethod("shortValue", String.class)).setAccessible(true);
 		//
 	}
 
@@ -851,15 +849,6 @@ class MainServletTest {
 		} // if
 			//
 		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
-		//
-	}
-
-	@Test
-	void testShortValue() throws IllegalAccessException, InvocationTargetException {
-		//
-		final short one = 1;
-		//
-		Assert.assertEquals(invoke(METHOD_SHORT_VALUE, null, Short.toString(one)), Short.valueOf(one));
 		//
 	}
 

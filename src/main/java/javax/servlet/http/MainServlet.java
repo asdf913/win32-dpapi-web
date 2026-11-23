@@ -325,32 +325,6 @@ public class MainServlet extends HttpServlet {
 		}
 	}
 
-	private static Short shortValue(final String instance) {
-		//
-		if (instance == null) {
-			//
-			return null;
-			//
-		} // if
-			//
-		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
-				collect(filter(
-						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
-				x -> IterableUtils.get(x, 0), null);
-		//
-		try {
-			//
-			return field == null || Narcissus.getField(instance, field) != null ? Short.valueOf(instance) : null;
-			//
-		} catch (final NumberFormatException e) {
-			//
-			return null;
-			//
-		} // try
-			//
-	}
-
 	private static String getInitParameter(final ServletConfig instance, final String name) {
 		return instance != null ? instance.getInitParameter(name) : null;
 	}
