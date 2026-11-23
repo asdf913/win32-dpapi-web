@@ -235,9 +235,7 @@ public class MainServlet extends HttpServlet {
 
 	private Configuration configuration = null;
 
-	private Integer primaryLanguage = null;
-
-	private Short subLanguage = null;
+	private Integer primaryLanguage, subLanguage = null;
 
 	@Override
 	public void init(final ServletConfig servletConfig) throws ServletException {
@@ -256,19 +254,13 @@ public class MainServlet extends HttpServlet {
 				f -> f != null && !Modifier.isStatic(f.getModifiers()) && Number.class.isAssignableFrom(getType(f))),
 				f -> {
 					//
-					final Class<?> type = getType(f);
-					//
 					final String name = getName(f);
 					//
 					final String initParameter = getInitParameter(servletConfig, name);
 					//
-					if (Objects.equals(type, Integer.class)) {
+					if (Objects.equals(getType(f), Integer.class)) {
 						//
 						Narcissus.setField(this, f, valueOf(initParameter));
-						//
-					} else if (Objects.equals(type, Short.class)) {
-						//
-						Narcissus.setField(this, f, shortValue(initParameter));
 						//
 					} else {
 						//
@@ -779,8 +771,7 @@ public class MainServlet extends HttpServlet {
 													? Kernel32Util.formatMessage(e.getErrorCode(),
 															WinNT.LocaleMacros.MAKELANGID(
 																	intValue(primaryLanguage, WinNT.LANG_ENGLISH),
-																	subLanguage != null ? subLanguage.shortValue()
-																			: WinNT.SUBLANG_ENGLISH_US),
+																	intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US)),
 															0)
 													: Narcissus.getField(a, b));
 									//
