@@ -235,7 +235,10 @@ public class MainServlet extends HttpServlet {
 
 	private Configuration configuration = null;
 
-	private Integer primaryLanguage, subLanguage = null;
+	@Note("Primary language identifier")
+	private Integer primaryLanguage = null;
+
+	private Integer subLanguage = null;
 
 	@Override
 	public void init(final ServletConfig servletConfig) throws ServletException {
