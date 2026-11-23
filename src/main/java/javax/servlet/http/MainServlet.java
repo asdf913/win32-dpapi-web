@@ -253,10 +253,10 @@ public class MainServlet extends HttpServlet {
 		} // if
 			//
 		forEach(filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
-				f -> f != null && !Modifier.isStatic(f.getModifiers()) && Number.class.isAssignableFrom(f.getType())),
+				f -> f != null && !Modifier.isStatic(f.getModifiers()) && Number.class.isAssignableFrom(getType(f))),
 				f -> {
 					//
-					final Class<?> type = f != null ? f.getType() : null;
+					final Class<?> type = getType(f);
 					//
 					final String name = getName(f);
 					//
@@ -281,7 +281,7 @@ public class MainServlet extends HttpServlet {
 		final Collection<Field> fs = collect(
 				filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
 						f -> f != null && !or(Modifier.isFinal(f.getModifiers()),
-								Objects.equals(f.getType(), Configuration.class), f.isSynthetic())),
+								Objects.equals(getType(f), Configuration.class), f.isSynthetic())),
 				Collectors.toList());
 		//
 		final int maxNameLength = orElse(max(mapToInt(stream(fs), f -> StringUtils.length(getName(f)))), 0);
@@ -291,6 +291,10 @@ public class MainServlet extends HttpServlet {
 				f -> System.out.println(StringUtils.rightPad(getName(f), maxNameLength) + "="
 						+ (isStatic(f) ? Narcissus.getStaticField(f) : Narcissus.getField(this, f))));
 		//
+	}
+
+	private static Class<?> getType(final Field instance) {
+		return instance != null ? instance.getType() : null;
 	}
 
 	private static int orElse(final OptionalInt instance, final int defaultValue) {
@@ -763,7 +767,7 @@ public class MainServlet extends HttpServlet {
 						final List<Field> fs = collect(
 								filter(testAndApply(Objects::nonNull, Narcissus.getDeclaredFields(Throwable.class),
 										Arrays::stream, null),
-										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, f.getType())),
+										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, getType(f))),
 								Collectors.toList());
 						//
 						testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable = e,
