@@ -18,24 +18,30 @@ import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -229,8 +235,12 @@ public class MainServlet extends HttpServlet {
 
 	private Configuration configuration = null;
 
+	private Integer primaryLanguage = null;
+
+	private Short subLanguage = null;
+
 	@Override
-	public void init() throws ServletException {
+	public void init(final ServletConfig servletConfig) throws ServletException {
 		//
 		if (configuration == null) {
 			//
@@ -242,6 +252,115 @@ public class MainServlet extends HttpServlet {
 			//
 		} // if
 			//
+		forEach(filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
+				f -> f != null && !Modifier.isStatic(f.getModifiers()) && Number.class.isAssignableFrom(f.getType())),
+				f -> {
+					//
+					final Class<?> type = f != null ? f.getType() : null;
+					//
+					final String name = getName(f);
+					//
+					final String initParameter = getInitParameter(servletConfig, name);
+					//
+					if (Objects.equals(type, Integer.class)) {
+						//
+						Narcissus.setField(this, f, valueOf(initParameter));
+						//
+					} else if (Objects.equals(type, Short.class)) {
+						//
+						Narcissus.setField(this, f, shortValue(initParameter));
+						//
+					} else {
+						//
+						throw new RuntimeException(Objects.toString(f));
+						//
+					} // if
+						//
+				});
+		//
+		final Collection<Field> fs = collect(
+				filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
+						f -> f != null && !or(Modifier.isFinal(f.getModifiers()),
+								Objects.equals(f.getType(), Configuration.class), f.isSynthetic())),
+				Collectors.toList());
+		//
+		final int maxNameLength = orElse(max(mapToInt(stream(fs), f -> StringUtils.length(getName(f)))), 0);
+		//
+		forEach(sorted(stream(fs),
+				(a, b) -> Integer.compare(StringUtils.length(getName(a)), StringUtils.length(getName(b)))),
+				f -> System.out.println(StringUtils.rightPad(getName(f), maxNameLength) + "="
+						+ (isStatic(f) ? Narcissus.getStaticField(f) : Narcissus.getField(this, f))));
+		//
+	}
+
+	private static int orElse(final OptionalInt instance, final int defaultValue) {
+		return instance != null ? instance.orElse(defaultValue) : defaultValue;
+	}
+
+	private static OptionalInt max(final IntStream instance) {
+		return instance != null ? instance.max() : null;
+	}
+
+	private static <T> IntStream mapToInt(final Stream<T> instance, final ToIntFunction<? super T> function) {
+		return instance != null ? instance.mapToInt(function) : null;
+	}
+
+	private static <T> Stream<T> sorted(final Stream<T> instance, final Comparator<? super T> comparator) {
+		return instance != null ? instance.sorted(comparator) : instance;
+	}
+
+	private static boolean or(final boolean a, final boolean b, final boolean c) {
+		//
+		boolean result = Boolean.logicalOr(a, b);
+		//
+		if (result) {
+			//
+			return result;
+			//
+		} // if
+			//
+		return Boolean.logicalOr(result, c);
+		//
+	}
+
+	private static <T> void forEach(final Stream<T> instance, final Consumer<? super T> action) {
+		if (instance != null) {
+			instance.forEach(action);
+		}
+	}
+
+	private static Short shortValue(final String instance) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		try {
+			//
+			return field == null || Narcissus.getField(instance, field) != null ? Short.valueOf(instance) : null;
+			//
+		} catch (final NumberFormatException e) {
+			//
+			return null;
+			//
+		} // try
+			//
+	}
+
+	private static String getInitParameter(final ServletConfig instance, final String name) {
+		return instance != null ? instance.getInitParameter(name) : null;
+	}
+
+	private static Field[] getDeclaredFields(final Class<?> instance) {
+		return instance != null ? instance.getDeclaredFields() : null;
 	}
 
 	private static ClassLoader getContextClassLoader(final Thread instance) {
@@ -654,8 +773,11 @@ public class MainServlet extends HttpServlet {
 									Narcissus.setField(a, b,
 											e != null
 													? Kernel32Util.formatMessage(e.getErrorCode(),
-															WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
-																	WinNT.SUBLANG_ENGLISH_US),
+															WinNT.LocaleMacros.MAKELANGID(
+																	primaryLanguage != null ? primaryLanguage.intValue()
+																			: WinNT.LANG_ENGLISH,
+																	subLanguage != null ? subLanguage.shortValue()
+																			: WinNT.SUBLANG_ENGLISH_US),
 															0)
 													: Narcissus.getField(a, b));
 									//

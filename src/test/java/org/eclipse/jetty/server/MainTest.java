@@ -35,8 +35,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 
 class MainTest {
 
-	private static Method METHOD_TO_MAP, METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_COLLECT, METHOD_TEST,
-			METHOD_LENGTH = null;
+	private static Method METHOD_TO_MAP, METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_COLLECT, METHOD_TEST, METHOD_LENGTH,
+			METHOD_PUT_ALL = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -55,6 +55,8 @@ class MainTest {
 		//
 		(METHOD_LENGTH = clz.getDeclaredMethod("length", Object[].class)).setAccessible(true);
 		//
+		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
@@ -64,6 +66,12 @@ class MainTest {
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
 			//
+			if (Objects.equals(method != null ? method.getReturnType() : null, Void.TYPE)) {
+				//
+				return null;
+				//
+			} // if
+				//
 			final String name = getName(method);
 			//
 			if (Objects.equals(name, "toString") && method != null && method.getParameterCount() == 0) {
@@ -406,6 +414,14 @@ class MainTest {
 	void testLength() throws IllegalAccessException, InvocationTargetException {
 		//
 		Assert.assertEquals(invoke(METHOD_LENGTH, null, (Object) null), Integer.valueOf(0));
+		//
+	}
+
+	@Test
+	void testPutAll() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(
+				invoke(METHOD_PUT_ALL, null, Reflection.newProxy(Map.class, ObjectUtils.getIfNull(ih, IH::new)), null));
 		//
 	}
 

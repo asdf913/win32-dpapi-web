@@ -16,6 +16,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,8 +28,10 @@ import java.util.function.Supplier;
 import java.util.regex.MatchResult;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -60,7 +63,7 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT = null;
+			METHOD_TEST_AND_ACCEPT, METHOD_SHORT_VALUE = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -90,6 +93,8 @@ class MainServletTest {
 		//
 		(METHOD_TEST_AND_ACCEPT = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
 				BiConsumer.class)).setAccessible(true);
+		//
+		(METHOD_SHORT_VALUE = clz.getDeclaredMethod("shortValue", String.class)).setAccessible(true);
 		//
 	}
 
@@ -176,7 +181,7 @@ class MainServletTest {
 				//
 			} else if (proxy instanceof Stream) {
 				//
-				if (contains(Arrays.asList("collect", "map"), name)) {
+				if (contains(Arrays.asList("collect", "map", "mapToInt"), name)) {
 					//
 					return null;
 					//
@@ -203,6 +208,14 @@ class MainServletTest {
 				return null;
 				//
 			} else if (proxy instanceof Supplier && Objects.equals(name, "get")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof ServletConfig && Objects.equals(name, "getInitParameter")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof IntStream && Objects.equals(name, "max")) {
 				//
 				return null;
 				//
@@ -430,6 +443,10 @@ class MainServletTest {
 					//
 					add(collection, Character.valueOf(' '));
 					//
+				} else if (Objects.equals(parameterType, Boolean.TYPE)) {
+					//
+					add(collection, Boolean.FALSE);
+					//
 				} else {
 					//
 					add(collection, null);
@@ -541,6 +558,10 @@ class MainServletTest {
 					//
 					add(collection, Character.valueOf(' '));
 					//
+				} else if (Objects.equals(parameterType, Boolean.TYPE)) {
+					//
+					add(collection, Boolean.FALSE);
+					//
 				} else if (Objects.equals(parameterType, ClassLoader.class)) {
 					//
 					add(collection, Narcissus.allocateInstance(getClass(ClassLoader.getSystemClassLoader())));
@@ -574,10 +595,13 @@ class MainServletTest {
 					|| Boolean.logicalAnd(Objects.equals(name, "filter"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class, Predicate.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "sorted"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class }))
+							Boolean.logicalOr(Arrays.equals(parameterTypes, new Class<?>[] { Stream.class }),
+									Arrays.equals(parameterTypes, new Class<?>[] { Stream.class, Comparator.class })))
 					|| Boolean.logicalAnd(Objects.equals(name, "getName"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "getSimpleName"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "getDeclaredFields"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))) {
 				//
 				Assert.assertNotNull(result, toString);
@@ -823,6 +847,15 @@ class MainServletTest {
 		} // if
 			//
 		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
+		//
+	}
+
+	@Test
+	void testShortValue() throws IllegalAccessException, InvocationTargetException {
+		//
+		final short one = 1;
+		//
+		Assert.assertEquals(invoke(METHOD_SHORT_VALUE, null, Short.toString(one)), Short.valueOf(one));
 		//
 	}
 

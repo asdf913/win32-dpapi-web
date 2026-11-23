@@ -2,14 +2,18 @@ package org.eclipse.jetty.server;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,9 +41,19 @@ public class Main {
 		//
 		servletContextHandler.setContextPath("/");
 		//
-		servletContextHandler.addServlet(new ServletHolder(new MainServlet()), "/");
+		final ServletHolder servletHolder = new ServletHolder(new MainServlet());
 		//
-		final Server server = new Server(NumberUtils.toInt(MapUtils.getString(toMap(args), "port"), 8080));
+		final Map<String, String> map = toMap(args);
+		//
+		servletHolder.setInitParameters(collect(
+				filter(testAndApply(Objects::nonNull, MainServlet.class.getDeclaredFields(), Arrays::stream, null),
+						f -> f != null && !Modifier.isStatic(f.getModifiers())
+								&& Number.class.isAssignableFrom(f.getType())),
+				LinkedHashMap::new, (a, b) -> put(a, getName(b), MapUtils.getObject(map, getName(b))), Main::putAll));
+		//
+		servletContextHandler.addServlet(servletHolder, "/");
+		//
+		final Server server = new Server(NumberUtils.toInt(MapUtils.getString(map, "port"), 8080));
 		//
 		server.setHandler(servletContextHandler);
 		//
@@ -142,6 +156,11 @@ public class Main {
 				: null;
 	}
 
+	private static <T, R, A> R collect(final Stream<T> instance, final Supplier<R> supplier,
+			final BiConsumer<R, ? super T> accumulator, final BiConsumer<R, R> combiner) {
+		return instance != null ? instance.collect(supplier, accumulator, combiner) : null;
+	}
+
 	private static <T> Stream<T> filter(final Stream<T> instance, final Predicate<? super T> predicate) {
 		return instance != null ? instance.filter(predicate) : instance;
 	}
@@ -170,6 +189,12 @@ public class Main {
 	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) {
 		if (instance != null) {
 			instance.put(key, value);
+		}
+	}
+
+	private static <K, V> void putAll(final Map<K, V> a, final Map<? extends K, ? extends V> b) {
+		if (a != null && b != null) {
+			a.putAll(b);
 		}
 	}
 
