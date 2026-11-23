@@ -778,8 +778,7 @@ public class MainServlet extends HttpServlet {
 											e != null
 													? Kernel32Util.formatMessage(e.getErrorCode(),
 															WinNT.LocaleMacros.MAKELANGID(
-																	primaryLanguage != null ? primaryLanguage.intValue()
-																			: WinNT.LANG_ENGLISH,
+																	intValue(primaryLanguage, WinNT.LANG_ENGLISH),
 																	subLanguage != null ? subLanguage.shortValue()
 																			: WinNT.SUBLANG_ENGLISH_US),
 															0)
@@ -807,6 +806,10 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static int intValue(final Number instance, final int defaultValue) {
+		return instance != null ? instance.intValue() : defaultValue;
 	}
 
 	private static byte[] cryptProtectData(final byte[] input, final Integer flags, final byte[] entropy,

@@ -570,6 +570,10 @@ class MainServletTest {
 					//
 					add(collection, Narcissus.allocateInstance(Method.class));
 					//
+				} else if (Objects.equals(parameterType, Number.class)) {
+					//
+					add(collection, Narcissus.allocateInstance(Integer.class));
+					//
 				} else if (parameterType != null && parameterType.isArray()) {
 					//
 					add(collection, Array.newInstance(parameterType.getComponentType(), 0));
