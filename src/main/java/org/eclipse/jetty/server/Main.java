@@ -156,7 +156,7 @@ public class Main {
 				: null;
 	}
 
-	private static <T, R, A> R collect(final Stream<T> instance, final Supplier<R> supplier,
+	private static <T, R> R collect(final Stream<T> instance, final Supplier<R> supplier,
 			final BiConsumer<R, ? super T> accumulator, final BiConsumer<R, R> combiner) {
 		return instance != null ? instance.collect(supplier, accumulator, combiner) : null;
 	}
