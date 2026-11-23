@@ -263,7 +263,38 @@ public class MainServlet extends HttpServlet {
 					//
 					if (Objects.equals(getType(f), Integer.class)) {
 						//
-						Narcissus.setField(this, f, valueOf(initParameter));
+						Integer integer = valueOf(initParameter);
+						//
+						if (integer == null) {
+							//
+							final List<Field> fs = collect(
+									filter(testAndApply(Objects::nonNull, getDeclaredFields(WinNT.class),
+											Arrays::stream, null), x -> Objects.equals(getName(x), initParameter)),
+									Collectors.toList());
+							//
+							final int size = IterableUtils.size(fs);
+							//
+							if (size == 1) {
+								//
+								final Field f1 = IterableUtils.get(fs, 0);
+								//
+								if (f1 == null || !Objects.equals(getType(f1), Integer.TYPE) || !isStatic(f1)) {
+									//
+									throw new RuntimeException();
+									//
+								} // if
+									//
+								integer = Integer.valueOf(Narcissus.getStaticIntField(f1));
+								//
+							} else if (size > 1) {
+								//
+								throw new RuntimeException();
+								//
+							} // if
+								//
+						} // if
+							//
+						Narcissus.setField(this, f, integer);
 						//
 					} else {
 						//

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,7 +39,9 @@ import javax.servlet.ServletResponse;
 
 import org.apache.commons.codec.BinaryDecoder;
 import org.apache.commons.codec.BinaryEncoder;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +59,7 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Predicates;
 import com.google.common.reflect.Reflection;
+import com.sun.jna.platform.win32.WinNT;
 
 import io.github.toolfactory.narcissus.Narcissus;
 
@@ -63,7 +67,7 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT = null;
+			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -94,6 +98,10 @@ class MainServletTest {
 		(METHOD_TEST_AND_ACCEPT = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
 				BiConsumer.class)).setAccessible(true);
 		//
+		(METHOD_GET_TYPE = clz.getDeclaredMethod("getType", Field.class)).setAccessible(true);
+		//
+		(METHOD_GET_DECLARED_FIELDS = clz.getDeclaredMethod("getDeclaredFields", Class.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
@@ -105,6 +113,8 @@ class MainServletTest {
 		private String servletPath;
 
 		private Integer serverPort, modifiers;
+
+		private Map<Object, Object> initParameters = null;
 
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
@@ -209,9 +219,10 @@ class MainServletTest {
 				//
 				return null;
 				//
-			} else if (proxy instanceof ServletConfig && Objects.equals(name, "getInitParameter")) {
+			} else if (proxy instanceof ServletConfig && Objects.equals(name, "getInitParameter") && args != null
+					&& args.length > 0) {
 				//
-				return null;
+				return MapUtils.getObject(initParameters, ArrayUtils.get(args, 0));
 				//
 			} else if (proxy instanceof IntStream && Objects.equals(name, "max")) {
 				//
@@ -690,7 +701,7 @@ class MainServletTest {
 	}
 
 	@Test
-	public void testInit() throws ServletException {
+	public void testInit() throws Throwable {
 		//
 		if (instance == null) {
 			//
@@ -700,8 +711,66 @@ class MainServletTest {
 			//
 		instance.init();
 		//
-		instance.init();
+		Field field = null;
 		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.initParameters = new LinkedHashMap<>();
+			//
+			field = testAndApply(CollectionUtils::isNotEmpty,
+					new FailableStream<>(
+							testAndApply(Objects::nonNull, getDeclaredFields(WinNT.class), Arrays::stream, null))
+							.filter(x -> Objects.equals(getType(x), Integer.TYPE)).collect(Collectors.toList()),
+					x -> IterableUtils.get(x, 0), null);
+			//
+		} // if
+			//
+		final Field f = field;
+		//
+		new FailableStream<>(
+				testAndApply(Objects::nonNull, getDeclaredFields(getClass(instance)), Arrays::stream, null))
+				.filter(x -> x != null && !Modifier.isStatic(x.getModifiers())
+						&& Number.class.isAssignableFrom(getType(x)))
+				.forEach(x -> {
+					//
+					if (Objects.equals(getType(x), Integer.class) && ih != null && ih.initParameters != null) {
+						//
+						ih.initParameters.put(getName(x), getName(f));
+						//
+					} // if
+						//
+				});
+		//
+		instance.init(Reflection.newProxy(ServletConfig.class, ih));
+		//
+	}
+
+	private static Class<?> getType(final Field instance) throws Throwable {
+		try {
+			final Object obj = invoke(METHOD_GET_TYPE, null, instance);
+			if (obj == null) {
+				return null;
+			} else if (obj instanceof Class) {
+				return (Class<?>) obj;
+			}
+			throw new Throwable(Objects.toString(getClass(obj)));
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
+	}
+
+	private static Field[] getDeclaredFields(final Class<?> instance) throws Throwable {
+		try {
+			final Object obj = invoke(METHOD_GET_DECLARED_FIELDS, null, instance);
+			if (obj == null) {
+				return null;
+			} else if (obj instanceof Field[]) {
+				return (Field[]) obj;
+			}
+			throw new Throwable(Objects.toString(getClass(obj)));
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
 	}
 
 	@Test
