@@ -304,10 +304,9 @@ public class MainServlet extends HttpServlet {
 						//
 				});
 		//
-		final Collection<Field> fs = collect(
-				filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
-						f -> f != null && !or(Modifier.isFinal(f.getModifiers()),
-								Objects.equals(getType(f), Configuration.class), f.isSynthetic())),
+		final Collection<Field> fs = collect(filter(
+				testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
+				f -> !or(isFinal(f), Objects.equals(getType(f), Configuration.class), f != null && f.isSynthetic())),
 				Collectors.toList());
 		//
 		final int maxNameLength = orElse(max(mapToInt(stream(fs), f -> StringUtils.length(getName(f)))), 0);
@@ -643,6 +642,10 @@ public class MainServlet extends HttpServlet {
 
 	private static boolean isStatic(final Member instance) {
 		return instance != null && Modifier.isStatic(instance.getModifiers());
+	}
+
+	private static boolean isFinal(final Member instance) {
+		return instance != null && Modifier.isFinal(instance.getModifiers());
 	}
 
 	private static Class<?>[] getParameterTypes(final Executable instance) {
