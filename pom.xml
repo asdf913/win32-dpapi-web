@@ -71,6 +71,12 @@
 			<artifactId>guava</artifactId>
 			<version>33.8.0-jre</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.logevents/logevents -->
+		<dependency>
+			<groupId>org.logevents</groupId>
+			<artifactId>logevents</artifactId>
+			<version>0.5.11</version>
+		</dependency>
 		<!--https://mvnrepository.com/artifact/org.testng/testng -->
 		<dependency>
 			<groupId>org.testng</groupId>

@@ -63,6 +63,8 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
@@ -80,6 +82,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 public class MainServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 6334507409143321232L;
+
+	private static final Logger LOG = LoggerFactory.getLogger(MainServlet.class);
 
 	private static final String RANDOM = "random";
 
@@ -311,10 +315,16 @@ public class MainServlet extends HttpServlet {
 		//
 		forEach(sorted(stream(fs),
 				(a, b) -> Integer.compare(StringUtils.length(getName(a)), StringUtils.length(getName(b)))),
-				f -> System.out.println(StringUtils.rightPad(getName(f), maxNameLength) + "="
-						+ testAndApply((a, b) -> MainServlet.isStatic(b), this, f,
-								(a, b) -> Narcissus.getStaticField(b), Narcissus::getField)));
+				f -> info(LOG, "{}={}", StringUtils.rightPad(getName(f), maxNameLength),
+						testAndApply((a, b) -> MainServlet.isStatic(b), this, f, (a, b) -> Narcissus.getStaticField(b),
+								Narcissus::getField)));
 		//
+	}
+
+	private static void info(final Logger instance, final String format, final Object... arguments) {
+		if (instance != null) {
+			instance.info(format, arguments);
+		}
 	}
 
 	private static void testAndRun(final boolean condition, final Runnable runnable) {
