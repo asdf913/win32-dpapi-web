@@ -315,7 +315,8 @@ public class MainServlet extends HttpServlet {
 		forEach(sorted(stream(fs),
 				(a, b) -> Integer.compare(StringUtils.length(getName(a)), StringUtils.length(getName(b)))),
 				f -> System.out.println(StringUtils.rightPad(getName(f), maxNameLength) + "="
-						+ (isStatic(f) ? Narcissus.getStaticField(f) : Narcissus.getField(this, f))));
+						+ testAndApply((a, b) -> MainServlet.isStatic(b), this, f,
+								(a, b) -> Narcissus.getStaticField(b), Narcissus::getField)));
 		//
 	}
 
