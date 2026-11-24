@@ -26,3 +26,13 @@ INFO:oejs.Server:main: Started @704ms</pre>
 <tr><td>SUBLANG_ENGLISH_US</td></tr>
 </tbody>
 </table>
+
+## Command
+
+### cryptUnprotectData
+
+<pre>curl --url "http://127.0.0.1:8080/cryptUnprotectData" -H "Content-Type: application/x-www-form-urlencoded" --data-raw "input=AQAAANCMnd8BFdERjHoAwE%2FCl%2BsBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAACEgF6l9kQd4%2F4nrRBHlPNLf%2BFumZIvntYfLgiud1NLPwAAAAAOgAAAAAIAACAAAACcYvsAXRikgkcFqqynn0vlVNE%2Bsz3gxmPdZRuYiIsGPRAAAABfjUVS%2B2VxO1QjdWSdi1PkQAAAABG5SpVYhYbAcMew2sAbL3LZuf1%2BXvh3OPqwpS9WJnmSrMBeSw3ZthXDQMbx5O0lBimOL5zL52fgDqBaXcR2nU0%3D&encoding=base64&flags=0&json=true"</pre>
+<pre>{"encoding":"base64","output":"Hello World"}</pre>
+
+<pre>curl --url "http://127.0.0.1:8080/cryptUnprotectData" -H "Content-Type: application/x-www-form-urlencoded" --data-raw "input=AQAAANCMnd8BFdERjHoAwE%2FCl%2BsBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAACEgF6l9kQd4%2F4nrRBHlPNLf%2BFumZIvntYfLgiud1NLPwAAAAAOgAAAAAIAACAAAACcYvsAXRikgkcFqqynn0vlVNE%2Bsz3gxmPdZRuYiIsGPRAAAABfjUVS%2B2VxO1QjdWSdi1PkQAAAABG5SpVYhYbAcMew2sAbL3LZuf1%2BXvh3OPqwpS9WJnmSrMBeSw3ZthXDQMbx5O0lBimOL5zL52fgDqBaXcR2nU0%3D&encoding=base64&flags=0&entropy=1&json=true"</pre>
+<pre>{"encoding":"base64","throwable":{"errorCode":13,"message":"The data is invalid."}}</pre>
