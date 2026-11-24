@@ -248,12 +248,8 @@ public class MainServlet extends HttpServlet {
 						() -> new Configuration(Configuration.VERSION_2_3_35)),
 				getContextClassLoader(Thread.currentThread()), "template");
 		//
-		if (configuration == null) {
-			//
-			configuration.setDefaultEncoding("UTF-8");
-			//
-		} // if
-			//
+		setDefaultEncoding(configuration, "UTF-8");
+		//
 		forEach(filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
 				f -> Boolean.logicalAnd(!isStatic(f), Number.class.isAssignableFrom(getType(f)))), f -> {
 					//
@@ -324,6 +320,12 @@ public class MainServlet extends HttpServlet {
 	private static void testAndRun(final boolean condition, final Runnable runnable) {
 		if (condition && runnable != null) {
 			runnable.run();
+		}
+	}
+
+	private static void setDefaultEncoding(final Configuration instance, final String encoding) {
+		if (instance != null) {
+			instance.setDefaultEncoding(encoding);
 		}
 	}
 
