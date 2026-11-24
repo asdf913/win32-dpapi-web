@@ -61,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -854,17 +855,45 @@ public class MainServlet extends HttpServlet {
 					//
 					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
 						//
-						write(writer,
-								new ObjectMapper()
-										.writeValueAsString(collect(
-												filter(stream(entrySet(map)),
-														x -> !Boolean.logicalOr(
-																isAssignableFrom(ServletRequest.class,
-																		getClass(getValue(x))),
-																Objects.equals(getClass(getValue(x)), String[].class))
-																&& getValue(x) != null),
-												LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
-												MainServlet::putAll)));
+						write(writer, new ObjectMapper().writeValueAsString(collect(map(filter(stream(entrySet(map)),
+								x -> !Boolean.logicalOr(isAssignableFrom(ServletRequest.class, getClass(getValue(x))),
+										Objects.equals(getClass(getValue(x)), String[].class)) && getValue(x) != null),
+								x -> {
+									//
+									final Object key = getKey(x);
+									//
+									final Object value = getValue(x);
+									//
+									final Win32Exception win32Exception = cast(Win32Exception.class, value);
+									//
+									if (win32Exception != null) {
+										//
+										final Map<String, Object> m = new LinkedHashMap<>(
+												Collections.singletonMap("errorCode", win32Exception.getErrorCode()));
+										//
+										put(m, "message", win32Exception.getMessage());
+										//
+										return Pair.of(key, m);
+										//
+									} // if
+										//
+									final LastErrorException lastErrorException = cast(LastErrorException.class, value);
+									//
+									if (lastErrorException != null) {
+										//
+										final Map<String, Object> m = new LinkedHashMap<>(Collections
+												.singletonMap("errorCode", lastErrorException.getErrorCode()));
+										//
+										put(m, "message", lastErrorException.getMessage());
+										//
+										return Pair.of(key, m);
+										//
+									} // if
+										//
+									return x;
+									//
+								}), LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
+								MainServlet::putAll)));
 						//
 						return;
 						//
