@@ -294,12 +294,12 @@ public class MainServlet extends HttpServlet {
 							//
 						Narcissus.setField(this, f, integer);
 						//
-					} else {
-						//
-						throw new RuntimeException(Objects.toString(f));
+						return;
 						//
 					} // if
 						//
+					throw new RuntimeException(Objects.toString(f));
+					//
 				});
 		//
 		final Collection<Field> fs = collect(
