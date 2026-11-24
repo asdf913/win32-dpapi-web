@@ -254,7 +254,7 @@ public class MainServlet extends HttpServlet {
 		} // if
 			//
 		forEach(filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
-				f -> !isStatic(f) && Number.class.isAssignableFrom(getType(f))), f -> {
+				f -> Boolean.logicalAnd(!isStatic(f), Number.class.isAssignableFrom(getType(f)))), f -> {
 					//
 					final String name = getName(f);
 					//
