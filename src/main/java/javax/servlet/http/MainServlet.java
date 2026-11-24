@@ -825,47 +825,8 @@ public class MainServlet extends HttpServlet {
 						//
 					} catch (final Win32Exception e) {
 						//
-						final List<Field> fs = collect(
-								filter(testAndApply(Objects::nonNull, Narcissus.getDeclaredFields(Throwable.class),
-										Arrays::stream, null),
-										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, getType(f))),
-								Collectors.toList());
-						//
-						final AtomicReference<Throwable> ar = new AtomicReference<>(null);
-						//
-						testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable = e,
-								testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0), null),
-								(a, b) -> {
-									//
-									try {
-										//
-										Narcissus.setField(a, b,
-												e != null
-														? Kernel32Util.formatMessage(e.getErrorCode(),
-																WinNT.LocaleMacros.MAKELANGID(
-																		intValue(primaryLanguage, WinNT.LANG_ENGLISH),
-																		intValue(subLanguage,
-																				WinNT.SUBLANG_ENGLISH_US)),
-																0)
-														: Narcissus.getField(a, b));
-										//
-									} catch (final LastErrorException lee) {
-										//
-										ar.set(lee);
-										//
-										Narcissus.setField(lee, b,
-												lee != null
-														? Kernel32Util.formatMessage(lee.getErrorCode(),
-																WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
-																		WinNT.SUBLANG_ENGLISH_US),
-																0)
-														: Narcissus.getField(lee, b));
-										//
-									} // try
-										//
-								});
-						//
-						throwable = ObjectUtils.getIfNull(ar.get(), throwable);
+						throwable = process(e, intValue(primaryLanguage, WinNT.LANG_ENGLISH),
+								intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US));
 						//
 					} catch (final Exception e) {
 						//
@@ -887,6 +848,47 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static Throwable process(final Win32Exception throwable, final int primaryLanguage, final int subLanguage) {
+		//
+		final List<Field> fs = collect(
+				filter(testAndApply(Objects::nonNull, Narcissus.getDeclaredFields(Throwable.class), Arrays::stream,
+						null), f -> f != null && !isStatic(f) && isAssignableFrom(String.class, getType(f))),
+				Collectors.toList());
+		//
+		final AtomicReference<Throwable> ar = new AtomicReference<>(null);
+		//
+		testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable,
+				testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0), null), (a, b) -> {
+					//
+					try {
+						//
+						Narcissus.setField(a, b,
+								throwable != null && isWindows()
+										? Kernel32Util.formatMessage(throwable.getErrorCode(),
+												WinNT.LocaleMacros.MAKELANGID(primaryLanguage, subLanguage), 0)
+										: Narcissus.getField(a, b));
+						//
+					} catch (final LastErrorException lee) {
+						//
+						ar.set(lee);
+						//
+						Narcissus
+								.setField(lee, b,
+										lee != null
+												? Kernel32Util.formatMessage(lee.getErrorCode(),
+														WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
+																WinNT.SUBLANG_ENGLISH_US),
+														0)
+												: Narcissus.getField(lee, b));
+						//
+					} // try
+						//
+				});
+		//
+		return ObjectUtils.getIfNull(ar.get(), throwable);
+		//
 	}
 
 	private static int intValue(final Number instance, final int defaultValue) {

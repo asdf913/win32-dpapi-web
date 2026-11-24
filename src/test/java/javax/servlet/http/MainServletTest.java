@@ -59,6 +59,7 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Predicates;
 import com.google.common.reflect.Reflection;
+import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinNT;
 
 import io.github.toolfactory.narcissus.Narcissus;
@@ -617,7 +618,9 @@ class MainServletTest {
 					|| Boolean.logicalAnd(Objects.equals(name, "getSimpleName"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "getDeclaredFields"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))) {
+							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "process"), Arrays.equals(parameterTypes,
+							new Class<?>[] { Win32Exception.class, Integer.TYPE, Integer.TYPE }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
