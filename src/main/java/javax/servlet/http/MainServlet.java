@@ -243,11 +243,12 @@ public class MainServlet extends HttpServlet {
 	@Override
 	public void init(final ServletConfig servletConfig) throws ServletException {
 		//
+		setClassLoaderForTemplateLoading(
+				configuration = ObjectUtils.getIfNull(configuration,
+						() -> new Configuration(Configuration.VERSION_2_3_35)),
+				getContextClassLoader(Thread.currentThread()), "template");
+		//
 		if (configuration == null) {
-			//
-			configuration = new Configuration(Configuration.VERSION_2_3_35);
-			//
-			configuration.setClassLoaderForTemplateLoading(getContextClassLoader(Thread.currentThread()), "template");
 			//
 			configuration.setDefaultEncoding("UTF-8");
 			//
@@ -315,6 +316,31 @@ public class MainServlet extends HttpServlet {
 				f -> System.out.println(StringUtils.rightPad(getName(f), maxNameLength) + "="
 						+ testAndApply((a, b) -> MainServlet.isStatic(b), this, f,
 								(a, b) -> Narcissus.getStaticField(b), Narcissus::getField)));
+		//
+	}
+
+	private static void setClassLoaderForTemplateLoading(final Configuration instance, final ClassLoader classLoader,
+			final String basePackagePath) {
+		//
+		if (instance == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(stream(
+						testAndApply(Objects::nonNull, getClass(basePackagePath), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), VALUE)), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null && Narcissus.getField(basePackagePath, field) == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		instance.setClassLoaderForTemplateLoading(classLoader, basePackagePath);
 		//
 	}
 
