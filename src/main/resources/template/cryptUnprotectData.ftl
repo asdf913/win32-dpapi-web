@@ -68,8 +68,8 @@
 						<#if output??>
 							<tr style="vertical-align:top"><td>Output</td><td><textarea style="field-sizing:content;resize:none;width:90vw;box-sizing:border-box">${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
 						</#if>
-						<#if throwable??&&throwable.class??&&throwable.class.name??&&throwable.class.name=="com.sun.jna.platform.win32.Win32Exception">
-							<tr style="vertical-align:top"><td>ErrorCode</td><td>${throwable.errorCode}</td><tr/>
+						<#if throwable??&&throwable.class??&&throwable.class.name??&&(throwable.class.name=="com.sun.jna.platform.win32.Win32Exception"||throwable.class.name=="com.sun.jna.LastErrorException")>
+							<tr style="vertical-align:top"><td>ErrorCode</td><td>${throwable.errorCode?c}</td><tr/>
 						</#if>
 						<tr><td><a href="/">Back</a></td></tr>
 					</tbody>

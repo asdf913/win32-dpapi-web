@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -69,6 +70,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
+import com.sun.jna.LastErrorException;
 import com.sun.jna.platform.win32.Crypt32Util;
 import com.sun.jna.platform.win32.Kernel32Util;
 import com.sun.jna.platform.win32.Win32Exception;
@@ -829,20 +831,41 @@ public class MainServlet extends HttpServlet {
 										f -> f != null && !isStatic(f) && isAssignableFrom(String.class, getType(f))),
 								Collectors.toList());
 						//
+						final AtomicReference<Throwable> ar = new AtomicReference<>(null);
+						//
 						testAndAccept((a, b) -> Boolean.logicalAnd(a != null, b != null), throwable = e,
 								testAndApply(x -> IterableUtils.size(x) == 1, fs, x -> IterableUtils.get(x, 0), null),
 								(a, b) -> {
 									//
-									Narcissus.setField(a, b,
-											e != null
-													? Kernel32Util.formatMessage(e.getErrorCode(),
-															WinNT.LocaleMacros.MAKELANGID(
-																	intValue(primaryLanguage, WinNT.LANG_ENGLISH),
-																	intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US)),
-															0)
-													: Narcissus.getField(a, b));
-									//
+									try {
+										//
+										Narcissus.setField(a, b,
+												e != null
+														? Kernel32Util.formatMessage(e.getErrorCode(),
+																WinNT.LocaleMacros.MAKELANGID(
+																		intValue(primaryLanguage, WinNT.LANG_ENGLISH),
+																		intValue(subLanguage,
+																				WinNT.SUBLANG_ENGLISH_US)),
+																0)
+														: Narcissus.getField(a, b));
+										//
+									} catch (final LastErrorException lee) {
+										//
+										ar.set(lee);
+										//
+										Narcissus.setField(lee, b,
+												lee != null
+														? Kernel32Util.formatMessage(lee.getErrorCode(),
+																WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
+																		WinNT.SUBLANG_ENGLISH_US),
+																0)
+														: Narcissus.getField(a, b));
+										//
+									} // try
+										//
 								});
+						//
+						throwable = ObjectUtils.getIfNull(ar.get(), throwable);
 						//
 					} catch (final Exception e) {
 						//
