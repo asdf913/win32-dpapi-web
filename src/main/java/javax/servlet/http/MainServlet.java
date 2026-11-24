@@ -788,18 +788,14 @@ public class MainServlet extends HttpServlet {
 					//
 					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
 						//
-						if (writer != null) {
-							//
-							writer.write(
-									new ObjectMapper()
-											.writeValueAsString(collect(
-													filter(stream(entrySet(map)),
-															x -> contains(Arrays.asList(String.class),
-																	getClass(getValue(x)))),
-													Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
-							//
-						} // if
-							//
+						write(writer,
+								new ObjectMapper()
+										.writeValueAsString(collect(
+												filter(stream(entrySet(map)),
+														x -> contains(Arrays.asList(String.class),
+																getClass(getValue(x)))),
+												Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+						//
 						return;
 						//
 					} // if
@@ -858,21 +854,18 @@ public class MainServlet extends HttpServlet {
 					//
 					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
 						//
-						if (writer != null) {
-							//
-							writer.write(
-									new ObjectMapper().writeValueAsString(collect(
-											filter(stream(entrySet(map)),
-													x -> !Boolean.logicalOr(
-															isAssignableFrom(ServletRequest.class,
-																	getClass(getValue(x))),
-															Objects.equals(getClass(getValue(x)), String[].class))
-															&& getValue(x) != null),
-											LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
-											MainServlet::putAll)));
-							//
-						} // if
-							//
+						write(writer,
+								new ObjectMapper()
+										.writeValueAsString(collect(
+												filter(stream(entrySet(map)),
+														x -> !Boolean.logicalOr(
+																isAssignableFrom(ServletRequest.class,
+																		getClass(getValue(x))),
+																Objects.equals(getClass(getValue(x)), String[].class))
+																&& getValue(x) != null),
+												LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
+												MainServlet::putAll)));
+						//
 						return;
 						//
 					} // if
@@ -889,6 +882,30 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static void write(final Writer instance, final String string) throws IOException {
+		//
+		if (instance == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "buf")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null && Narcissus.getField(instance, field) == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		instance.write(string);
+		//
 	}
 
 	private static <T, R> R collect(final Stream<T> instance, final Supplier<R> supplier,
