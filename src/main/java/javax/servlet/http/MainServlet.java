@@ -799,10 +799,10 @@ public class MainServlet extends HttpServlet {
 																	getClass(getValue(x)))),
 													Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
 							//
-							return;
-							//
 						} // if
 							//
+						return;
+						//
 					} // if
 						//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
