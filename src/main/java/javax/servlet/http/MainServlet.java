@@ -286,12 +286,14 @@ public class MainServlet extends HttpServlet {
 									//
 								integer = Integer.valueOf(Narcissus.getStaticIntField(f1));
 								//
-							} else if (size > 1) {
+							} // if
+								//
+							testAndRun(size > 1, () -> {
 								//
 								throw new RuntimeException();
 								//
-							} // if
-								//
+							});
+							//
 						} // if
 							//
 						Narcissus.setField(this, f, integer);
@@ -317,6 +319,12 @@ public class MainServlet extends HttpServlet {
 						+ testAndApply((a, b) -> MainServlet.isStatic(b), this, f,
 								(a, b) -> Narcissus.getStaticField(b), Narcissus::getField)));
 		//
+	}
+
+	private static void testAndRun(final boolean condition, final Runnable runnable) {
+		if (condition && runnable != null) {
+			runnable.run();
+		}
 	}
 
 	private static void setClassLoaderForTemplateLoading(final Configuration instance, final ClassLoader classLoader,
