@@ -16,10 +16,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -117,7 +119,7 @@ class MainServletTest {
 
 		private Integer serverPort, modifiers;
 
-		private Map<Object, Object> initParameters = null;
+		private Map<Object, Object> initParameters, parameters;
 
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
@@ -136,13 +138,17 @@ class MainServletTest {
 				//
 			} else if (proxy instanceof ServletRequest) {
 				//
-				if (contains(Arrays.asList("getScheme", "getServerName", "getParameter"), name)) {
+				if (contains(Arrays.asList("getScheme", "getServerName"), name)) {
 					//
 					return null;
 					//
 				} else if (Objects.equals(name, "getServerPort")) {
 					//
 					return serverPort;
+					//
+				} else if (Objects.equals(name, "getParameter") && args != null && args.length > 0) {
+					//
+					return MapUtils.getObject(parameters, ArrayUtils.get(args, 0));
 					//
 				} // if
 					//
@@ -214,7 +220,7 @@ class MainServletTest {
 				//
 				return null;
 				//
-			} else if (proxy instanceof Map && Objects.equals(name, "keySet")) {
+			} else if (proxy instanceof Map && contains(Arrays.asList("keySet", "entrySet"), name)) {
 				//
 				return null;
 				//
@@ -228,6 +234,10 @@ class MainServletTest {
 				return MapUtils.getObject(initParameters, ArrayUtils.get(args, 0));
 				//
 			} else if (proxy instanceof IntStream && Objects.equals(name, "max")) {
+				//
+				return null;
+				//
+			} else if (proxy instanceof Entry && contains(Arrays.asList("getKey", "getValue"), name)) {
 				//
 				return null;
 				//
@@ -863,6 +873,8 @@ class MainServletTest {
 					if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
 						//
 						ih.servletPath = string;
+						//
+						ih.parameters = Collections.singletonMap("json", "true");
 						//
 					} // if
 						//

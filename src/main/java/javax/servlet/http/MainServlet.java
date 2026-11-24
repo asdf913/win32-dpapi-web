@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -60,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -67,6 +69,7 @@ import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
@@ -784,6 +787,24 @@ public class MainServlet extends HttpServlet {
 									x),
 							null), String::new, null));
 					//
+					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
+						//
+						if (writer != null) {
+							//
+							writer.write(
+									new ObjectMapper()
+											.writeValueAsString(collect(
+													filter(stream(entrySet(map)),
+															x -> contains(Arrays.asList(String.class),
+																	getClass(getValue(x)))),
+													Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+							//
+							return;
+							//
+						} // if
+							//
+					} // if
+						//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
 				} catch (final Exception e) {
@@ -848,6 +869,18 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static <K> K getKey(final Entry<K, ?> instance) {
+		return instance != null ? instance.getKey() : null;
+	}
+
+	private static <V> V getValue(final Entry<?, V> instance) {
+		return instance != null ? instance.getValue() : null;
+	}
+
+	private static <K, V> Collection<Entry<K, V>> entrySet(final Map<K, V> instance) {
+		return instance != null ? instance.entrySet() : null;
 	}
 
 	private static Throwable process(final Win32Exception throwable, final int primaryLanguage, final int subLanguage) {
