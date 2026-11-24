@@ -451,9 +451,9 @@ public class MainServlet extends HttpServlet {
 											MainServlet::getName)),
 									Collectors.toList())));
 					//
-					map.put(REQUEST, request);
+					put(map, REQUEST, request);
 					//
-					map.put("isWindows", Boolean.valueOf(isWindows()));
+					put(map, "isWindows", Boolean.valueOf(isWindows()));
 					//
 					process(getTemplate(configuration, "index.ftl"), map, writer);
 					//
@@ -474,11 +474,11 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put(ENCODINGS, encodings);
+					put(map, ENCODINGS, encodings);
 					//
-					map.put(ENCODING, "base64");
+					put(map, ENCODING, "base64");
 					//
-					map.put(FLAGS, Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
+					put(map, FLAGS, Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
 							: DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS);
 					//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
@@ -763,11 +763,11 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put(ENCODINGS, encodings);
+					put(map, ENCODINGS, encodings);
 					//
 					final String encoding = getParameter(request, ENCODING);
 					//
-					map.put(ENCODING, encoding);
+					put(map, ENCODING, encoding);
 					//
 					final List<Method> ms = collect(filter(
 							testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream,
@@ -779,7 +779,7 @@ public class MainServlet extends HttpServlet {
 							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
 							Narcissus::invokeStaticMethod, null));
 					//
-					map.put("output", testAndApply(Objects::nonNull, testAndApply(Objects::nonNull,
+					put(map, "output", testAndApply(Objects::nonNull, testAndApply(Objects::nonNull,
 							cryptProtectData(input, flags, entropy, getParameter(request, "description"),
 									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
 							x -> encode(
@@ -826,17 +826,17 @@ public class MainServlet extends HttpServlet {
 					//
 					Arrays.sort(encodings, MainServlet::compare);
 					//
-					map.put(ENCODINGS, encodings);
+					put(map, ENCODINGS, encodings);
 					//
 					final String encoding = getParameter(request, ENCODING);
 					//
-					map.put(ENCODING, encoding);
+					put(map, ENCODING, encoding);
 					//
 					Throwable throwable = null;
 					//
 					try {
 						//
-						map.put("output",
+						put(map, "output",
 								testAndApply(Objects::nonNull, cryptUnprotectData(
 										decode(cast(BinaryDecoder.class,
 												newInstance(MapUtils.getObject(encodingMap, encoding))), input),
@@ -855,8 +855,29 @@ public class MainServlet extends HttpServlet {
 						//
 					} // try
 						//
-					map.put("throwable", throwable);
+					put(map, "throwable", throwable);
 					//
+					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
+						//
+						if (writer != null) {
+							//
+							writer.write(
+									new ObjectMapper().writeValueAsString(collect(
+											filter(stream(entrySet(map)),
+													x -> !Boolean.logicalOr(
+															isAssignableFrom(ServletRequest.class,
+																	getClass(getValue(x))),
+															Objects.equals(getClass(getValue(x)), String[].class))
+															&& getValue(x) != null),
+											LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
+											MainServlet::putAll)));
+							//
+						} // if
+							//
+						return;
+						//
+					} // if
+						//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
 				} catch (final Exception e) {
@@ -869,6 +890,23 @@ public class MainServlet extends HttpServlet {
 				//
 		} // try
 			//
+	}
+
+	private static <T, R> R collect(final Stream<T> instance, final Supplier<R> supplier,
+			final BiConsumer<R, ? super T> accumulator, final BiConsumer<R, R> combiner) {
+		return instance != null ? instance.collect(supplier, accumulator, combiner) : null;
+	}
+
+	private static <K, V> void putAll(final Map<K, V> a, final Map<? extends K, ? extends V> b) {
+		if (a != null && b != null) {
+			a.putAll(b);
+		}
+	}
+
+	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) {
+		if (instance != null) {
+			instance.put(key, value);
+		}
 	}
 
 	private static <K> K getKey(final Entry<K, ?> instance) {

@@ -70,7 +70,8 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN = null;
+			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN,
+			METHOD_PUT_ALL = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -106,6 +107,8 @@ class MainServletTest {
 		(METHOD_GET_DECLARED_FIELDS = clz.getDeclaredMethod("getDeclaredFields", Class.class)).setAccessible(true);
 		//
 		(METHOD_TEST_AND_RUN = clz.getDeclaredMethod("testAndRun", Boolean.TYPE, Runnable.class)).setAccessible(true);
+		//
+		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
 		//
 	}
 
@@ -220,7 +223,7 @@ class MainServletTest {
 				//
 				return null;
 				//
-			} else if (proxy instanceof Map && contains(Arrays.asList("keySet", "entrySet"), name)) {
+			} else if (proxy instanceof Map && contains(Arrays.asList("keySet", "entrySet", "put"), name)) {
 				//
 				return null;
 				//
@@ -945,6 +948,13 @@ class MainServletTest {
 		//
 		Assert.assertNull(invoke(METHOD_TEST_AND_RUN, null, Boolean.TRUE,
 				Reflection.newProxy(Runnable.class, ObjectUtils.getIfNull(ih, IH::new))));
+		//
+	}
+
+	@Test
+	void testPutAll() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(invoke(METHOD_PUT_ALL, null, Collections.emptyMap(), null));
 		//
 	}
 

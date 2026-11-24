@@ -64,6 +64,7 @@
 						<tr><td>Flags</td><td><input name="flags" value="<#if flags??>${flags}<#elseif request??>${request.getParameter("flags")!""}</#if>" style="field-sizing:content;resize:none;width:90vw;box-sizing:border-box"/></td></tr>
 						<tr><td>Entropy</td><td><input name="entropy" value="<#if request??>${request.getParameter("entropy")!""}</#if>" style="field-sizing:content;resize:none;width:90vw;box-sizing:border-box"/></td></tr>
 						<tr style="visibility:hidden"><td>Description</td><td></td></tr>
+						<tr><td>JSON</td><td><input name="json" type="checkbox" value="true"/></td></tr>
 						<tr><td>&nbsp;</td><td><input type="submit"/></td></tr>
 						<#if output??>
 							<tr style="vertical-align:top"><td>Output</td><td><textarea style="field-sizing:content;resize:none;width:90vw;box-sizing:border-box">${output}</textarea></td><td><input type="button" value="Copy" onclick="navigator.clipboard.writeText(document.getElementsByTagName('textarea')[0].value);"/></td><tr/>
