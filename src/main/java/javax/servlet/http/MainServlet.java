@@ -304,9 +304,9 @@ public class MainServlet extends HttpServlet {
 						//
 				});
 		//
-		final Collection<Field> fs = collect(filter(
-				testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
-				f -> !or(isFinal(f), Objects.equals(getType(f), Configuration.class), f != null && f.isSynthetic())),
+		final Collection<Field> fs = collect(
+				filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
+						f -> !or(isFinal(f), Objects.equals(getType(f), Configuration.class), isSynthetic(f))),
 				Collectors.toList());
 		//
 		final int maxNameLength = orElse(max(mapToInt(stream(fs), f -> StringUtils.length(getName(f)))), 0);
@@ -317,6 +317,10 @@ public class MainServlet extends HttpServlet {
 						+ testAndApply((a, b) -> MainServlet.isStatic(b), this, f,
 								(a, b) -> Narcissus.getStaticField(b), Narcissus::getField)));
 		//
+	}
+
+	private static boolean isSynthetic(final Field instance) {
+		return instance != null && instance.isSynthetic();
 	}
 
 	private static Class<?> getType(final Field instance) {
