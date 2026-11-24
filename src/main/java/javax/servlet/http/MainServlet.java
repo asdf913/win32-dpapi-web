@@ -859,7 +859,7 @@ public class MainServlet extends HttpServlet {
 																WinNT.LocaleMacros.MAKELANGID(WinNT.LANG_ENGLISH,
 																		WinNT.SUBLANG_ENGLISH_US),
 																0)
-														: Narcissus.getField(a, b));
+														: Narcissus.getField(lee, b));
 										//
 									} // try
 										//
