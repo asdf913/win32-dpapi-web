@@ -189,7 +189,7 @@ public class MainServlet extends HttpServlet {
 				//
 		} catch (final IOException e) {
 			//
-			printStackTrace(e);
+			error(LOG, getMessage(e), e);
 			//
 		} // try
 			//
@@ -231,7 +231,7 @@ public class MainServlet extends HttpServlet {
 				//
 		} catch (final IOException e) {
 			//
-			printStackTrace(e);
+			error(LOG, getMessage(e), e);
 			//
 		} // try
 			//
@@ -319,6 +319,12 @@ public class MainServlet extends HttpServlet {
 						testAndApply((a, b) -> MainServlet.isStatic(b), this, f, (a, b) -> Narcissus.getStaticField(b),
 								Narcissus::getField)));
 		//
+	}
+
+	private static void error(final Logger instance, final String msg, final Throwable t) {
+		if (instance != null) {
+			instance.error(msg, t);
+		}
 	}
 
 	private static void info(final Logger instance, final String format, final Object... arguments) {
@@ -1267,12 +1273,6 @@ public class MainServlet extends HttpServlet {
 		//
 		return field == null || Narcissus.getField(instance, field) != null ? instance.replace(oldChar, newChar) : null;
 		//
-	}
-
-	private static void printStackTrace(final Throwable instance) {
-		if (instance != null) {
-			instance.printStackTrace();
-		}
 	}
 
 }
