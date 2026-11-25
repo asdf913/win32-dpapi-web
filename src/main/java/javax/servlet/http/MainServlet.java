@@ -111,6 +111,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String REQUEST = "request";
 
+	private static final String OUTPUT = "output";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -873,7 +875,7 @@ public class MainServlet extends HttpServlet {
 					//
 				} // if
 					//
-				put(map, "output",
+				put(map, OUTPUT,
 						testAndApply(Objects::nonNull,
 								testAndApply(Objects::nonNull, output,
 										x -> encode(cast(BinaryEncoder.class,
@@ -886,12 +888,14 @@ public class MainServlet extends HttpServlet {
 					if (json) {
 						//
 						write(writer,
-								new ObjectMapper().writeValueAsString(collect(
-										filter(stream(entrySet(map)),
-												x -> Boolean.logicalAnd(
-														contains(Arrays.asList(String.class), getClass(getValue(x))),
-														contains(Arrays.asList("output", ENCODING), getKey(x)))),
-										Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+								new ObjectMapper()
+										.writeValueAsString(collect(
+												filter(stream(entrySet(map)),
+														x -> Boolean.logicalAnd(
+																contains(Arrays.asList(String.class),
+																		getClass(getValue(x))),
+																contains(Arrays.asList(OUTPUT, ENCODING), getKey(x)))),
+												Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
 						//
 					} else {
 						//
@@ -930,7 +934,7 @@ public class MainServlet extends HttpServlet {
 				//
 				try {
 					//
-					put(map, "output", testAndApply(Objects::nonNull, cryptUnprotectData(
+					put(map, OUTPUT, testAndApply(Objects::nonNull, cryptUnprotectData(
 							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
 									getBytes(getParameter(request, "input"))),
 							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, "entropy")),
