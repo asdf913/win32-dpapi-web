@@ -115,6 +115,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String ENTROPY = "entropy";
 
+	private static final String THROWABLE = "throwable";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -796,7 +798,7 @@ public class MainServlet extends HttpServlet {
 				if (StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, "input")))
 						&& file != null) {
 					//
-					put(map, "throwable", throwable = new RuntimeException("Please pass input or file"));
+					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
 					//
 				} else if (input == null && exists(file) && isFile(file) && canRead(file)) {
 					//
@@ -952,7 +954,7 @@ public class MainServlet extends HttpServlet {
 					//
 				} // try
 					//
-				put(map, "throwable", throwable);
+				put(map, THROWABLE, throwable);
 				//
 				try (final Writer writer = getWriter(response)) {
 					//
@@ -1119,7 +1121,7 @@ public class MainServlet extends HttpServlet {
 				//
 			if (IterableUtils.size(files) > 1) {
 				//
-				put(map, "throwable", new RuntimeException("More than one file found"));
+				put(map, THROWABLE, new RuntimeException("More than one file found"));
 				//
 			} else if ((file = testAndApply(x -> IterableUtils.size(x) == 1, files, x -> IterableUtils.get(x, 0),
 					null)) != null) {
