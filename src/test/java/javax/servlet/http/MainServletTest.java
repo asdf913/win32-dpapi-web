@@ -78,7 +78,7 @@ class MainServletTest {
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
 			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS, METHOD_PUT,
-			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES = null;
+			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -135,13 +135,15 @@ class MainServletTest {
 		//
 		(METHOD_GET_BYTES = clz.getDeclaredMethod("getBytes", String.class)).setAccessible(true);
 		//
+		(METHOD_CONTAINS_KEY = clz.getDeclaredMethod("containsKey", Map.class, Object.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
 
 		private PrintWriter writer;
 
-		private Boolean contains, test, add;
+		private Boolean contains, test, add, containsKey;
 
 		private String servletPath, method, contentType;
 
@@ -282,10 +284,18 @@ class MainServletTest {
 				//
 				return null;
 				//
-			} else if (proxy instanceof Map && contains(Arrays.asList("keySet", "entrySet", "put"), name)) {
+			} else if (proxy instanceof Map) {
 				//
-				return null;
-				//
+				if (contains(Arrays.asList("keySet", "entrySet", "put"), name)) {
+					//
+					return null;
+					//
+				} else if (Objects.equals(name, "containsKey")) {
+					//
+					return containsKey;
+					//
+				} // if
+					//
 			} else if (proxy instanceof Supplier && Objects.equals(name, "get")) {
 				//
 				return null;
@@ -1135,6 +1145,13 @@ class MainServletTest {
 		} catch (final InvocationTargetException e) {
 			throw e.getTargetException();
 		}
+	}
+
+	@Test
+	void testContainsKey() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertEquals(invoke(METHOD_CONTAINS_KEY, null, Collections.singletonMap(null, null), ""), Boolean.FALSE);
+		//
 	}
 
 }

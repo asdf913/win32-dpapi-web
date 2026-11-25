@@ -815,7 +815,7 @@ public class MainServlet extends HttpServlet {
 					//
 					for (final Entry<String, Object> entry : cryptProtectData.entrySet()) {
 						//
-						if (map != null && !map.containsKey(key = getKey(entry))) {
+						if (!containsKey(map, key = getKey(entry))) {
 							//
 							put(map, key, getValue(entry));
 							//
@@ -1028,6 +1028,10 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static boolean containsKey(final Map<?, ?> instance, final Object key) {
+		return instance != null && instance.containsKey(key);
 	}
 
 	private static <T> T getValueByClass(final Map<?, ?> map, final Class<T> clz) {
