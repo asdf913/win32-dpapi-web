@@ -803,7 +803,7 @@ public class MainServlet extends HttpServlet {
 					//
 					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
 					//
-				} else if (input == null && exists(file) && isFile(file) && canRead(file)) {
+				} else if (Boolean.logicalAnd(input == null, exists(file) && isFile(file) && canRead(file))) {
 					//
 					input = FileUtils.readFileToByteArray(file);
 					//
