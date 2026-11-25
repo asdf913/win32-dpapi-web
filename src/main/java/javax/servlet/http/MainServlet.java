@@ -1089,7 +1089,7 @@ public class MainServlet extends HttpServlet {
 			//
 			for (int i = 0; i < IterableUtils.size(fileItems); i++) {
 				//
-				if ((fileItem = IterableUtils.get(fileItems, i)) != null
+				if ((fileItem = IterableUtils.get(fileItems, i)) != null && !fileItem.isFormField()
 						&& StringUtils.isNotEmpty(fileName = fileItem.getName())) {
 					//
 					if (field == null) {
