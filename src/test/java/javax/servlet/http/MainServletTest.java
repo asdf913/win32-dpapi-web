@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.MatchResult;
@@ -76,9 +77,10 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
-			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS, METHOD_PUT,
-			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY, METHOD_AND = null;
+			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
+			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
+			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
+			METHOD_AND = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -106,7 +108,10 @@ class MainServletTest {
 		//
 		(METHOD_VALUE_OF = clz.getDeclaredMethod("valueOf", String.class)).setAccessible(true);
 		//
-		(METHOD_TEST_AND_ACCEPT = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
+		(METHOD_TEST_AND_ACCEPT3 = clz.getDeclaredMethod("testAndAccept", Predicate.class, Object.class,
+				Consumer.class)).setAccessible(true);
+		//
+		(METHOD_TEST_AND_ACCEPT4 = clz.getDeclaredMethod("testAndAccept", BiPredicate.class, Object.class, Object.class,
 				BiConsumer.class)).setAccessible(true);
 		//
 		(METHOD_GET_TYPE = clz.getDeclaredMethod("getType", Field.class)).setAccessible(true);
@@ -1009,9 +1014,13 @@ class MainServletTest {
 			//
 		} // if
 			//
+		final Predicate<?> predicate = Reflection.newProxy(Predicate.class, ih);
+		//
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT3, null, predicate, null, null));
+		//
 		final BiPredicate<?, ?> biPredicate = Reflection.newProxy(BiPredicate.class, ih);
 		//
-		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT4, null, biPredicate, null, null, null));
 		//
 		if (ih != null) {
 			//
@@ -1019,7 +1028,9 @@ class MainServletTest {
 			//
 		} // if
 			//
-		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT, null, biPredicate, null, null, null));
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT3, null, predicate, null, null));
+		//
+		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT4, null, biPredicate, null, null, null));
 		//
 	}
 

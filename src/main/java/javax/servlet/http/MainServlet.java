@@ -430,6 +430,12 @@ public class MainServlet extends HttpServlet {
 		//
 	}
 
+	private static <K, V> void forEach(final Map<K, V> instance, final BiConsumer<? super K, ? super V> action) {
+		if (instance != null) {
+			instance.forEach(action);
+		}
+	}
+
 	private static <T> void forEach(final Stream<T> instance, final Consumer<? super T> action) {
 		if (instance != null) {
 			instance.forEach(action);
@@ -810,18 +816,8 @@ public class MainServlet extends HttpServlet {
 					//
 				} // if
 					//
-				if (cryptProtectData != null && cryptProtectData.entrySet() != null
-						&& cryptProtectData.entrySet().iterator() != null) {
-					//
-					for (final Entry<String, Object> entry : cryptProtectData.entrySet()) {
-						//
-						testAndAccept((a, b) -> !containsKey(a, getKey(b)), map, entry,
-								(a, b) -> put(a, getKey(b), getValue(b)));
-						//
-					} // for
-						//
-				} // if
-					//
+				forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
+				//
 				final boolean json = Objects.equals(Boolean.TRUE,
 						Boolean.valueOf(
 								ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "json")),
@@ -1347,6 +1343,12 @@ public class MainServlet extends HttpServlet {
 			//
 		return supplier != null ? supplier.get() : null;
 		//
+	}
+
+	private static <T> void testAndAccept(final Predicate<T> predicate, final T value, final Consumer<T> consumer) {
+		if (predicate != null && predicate.test(value) && consumer != null) {
+			consumer.accept(value);
+		}
 	}
 
 	private static <T, U> void testAndAccept(final BiPredicate<T, U> predicate, final T t, final U u,
