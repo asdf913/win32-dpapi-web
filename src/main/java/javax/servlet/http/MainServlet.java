@@ -1031,9 +1031,7 @@ public class MainServlet extends HttpServlet {
 			//
 			for (final Entry<?, ?> entry : map.entrySet()) {
 				//
-				if (entry == null 
-						|| !isAssignableFrom(clz, getClass(value = getValue(entry))) 
-						|| clz == null) {
+				if (entry == null || !isAssignableFrom(clz, getClass(value = getValue(entry))) || clz == null) {
 					//
 					continue;
 					//
