@@ -1075,6 +1075,8 @@ public class MainServlet extends HttpServlet {
 			//
 			final List<FileItem> fileItems = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
 			//
+			putAll(map, getFormFieldMap(fileItems));
+			//
 			FileItem fileItem = null;
 			//
 			String fileName = null;
@@ -1087,18 +1089,8 @@ public class MainServlet extends HttpServlet {
 			//
 			for (int i = 0; i < IterableUtils.size(fileItems); i++) {
 				//
-				if ((fileItem = IterableUtils.get(fileItems, i)) == null) {
-					//
-					continue;
-					//
-				} // if
-					//
-				if (fileItem.isFormField()) {
-					//
-					put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), fileItem.getFieldName(),
-							fileItem.getString());
-					//
-				} else if (StringUtils.isNotEmpty(fileName = fileItem.getName())) {
+				if ((fileItem = IterableUtils.get(fileItems, i)) != null
+						&& StringUtils.isNotEmpty(fileName = fileItem.getName())) {
 					//
 					if (field == null) {
 						//
@@ -1135,6 +1127,27 @@ public class MainServlet extends HttpServlet {
 			} // if
 				//
 		} // if
+			//
+		return map;
+		//
+	}
+
+	private static Map<String, Object> getFormFieldMap(final Iterable<FileItem> fileItems) {
+		//
+		FileItem fileItem = null;
+		//
+		Map<String, Object> map = null;
+		//
+		for (int i = 0; i < IterableUtils.size(fileItems); i++) {
+			//
+			if ((fileItem = IterableUtils.get(fileItems, i)) != null && fileItem.isFormField()) {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), fileItem.getFieldName(),
+						fileItem.getString());
+				//
+			} // if
+				//
+		} // for
 			//
 		return map;
 		//

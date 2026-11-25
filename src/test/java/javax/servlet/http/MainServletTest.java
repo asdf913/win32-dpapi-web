@@ -51,6 +51,7 @@ import org.apache.commons.codec.BinaryEncoder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -80,7 +81,7 @@ class MainServletTest {
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
 			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
 			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
-			METHOD_AND = null;
+			METHOD_AND, METHOD_GET_FORM_FIELD_MAP = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -145,13 +146,15 @@ class MainServletTest {
 		(METHOD_AND = clz.getDeclaredMethod("and", Object.class, Predicate.class, Predicate.class, Predicate.class))
 				.setAccessible(true);
 		//
+		(METHOD_GET_FORM_FIELD_MAP = clz.getDeclaredMethod("getFormFieldMap", Iterable.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
 
 		private PrintWriter writer;
 
-		private Boolean contains, test, add, containsKey;
+		private Boolean contains, test, add, containsKey, isFormField;
 
 		private String servletPath, method, contentType;
 
@@ -204,6 +207,10 @@ class MainServletTest {
 					//
 				} // if
 					//
+			} else if (proxy instanceof Iterable && Objects.equals(name, "iterator")) {
+				//
+				return null;
+				//
 			} // if
 				//
 			if (proxy instanceof ServletResponse) {
@@ -321,6 +328,18 @@ class MainServletTest {
 				//
 				return null;
 				//
+			} else if (proxy instanceof FileItem) {
+				//
+				if (Objects.equals(name, "isFormField")) {
+					//
+					return isFormField;
+					//
+				} else if (contains(Arrays.asList("getFieldName", "getString"), name)) {
+					//
+					return null;
+					//
+				} // if
+					//
 			} // if
 				//
 			throw new Throwable(name);
@@ -1182,6 +1201,31 @@ class MainServletTest {
 		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, null, null), Boolean.FALSE);
 		//
 		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, predicate, null), Boolean.FALSE);
+		//
+	}
+
+	@Test
+	void testGetFormFieldMap() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(invoke(METHOD_GET_FORM_FIELD_MAP, null, Collections.singleton(null)));
+		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.isFormField = Boolean.FALSE;
+			//
+		} // if
+			//
+		final Iterable<FileItem> iterable = Collections.singleton(Reflection.newProxy(FileItem.class, ih));
+		//
+		Assert.assertNull(invoke(METHOD_GET_FORM_FIELD_MAP, null, iterable));
+		//
+		if (ih != null) {
+			//
+			ih.isFormField = Boolean.TRUE;
+			//
+		} // if
+			//
+		Assert.assertEquals(invoke(METHOD_GET_FORM_FIELD_MAP, null, iterable), Collections.singletonMap(null, null));
 		//
 	}
 
