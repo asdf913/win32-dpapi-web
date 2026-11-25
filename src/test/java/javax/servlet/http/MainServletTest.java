@@ -74,7 +74,7 @@ class MainServletTest {
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
-			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ = null;
+			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_AND = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -120,6 +120,9 @@ class MainServletTest {
 		(METHOD_IS_FILE = clz.getDeclaredMethod("isFile", File.class)).setAccessible(true);
 		//
 		(METHOD_CAN_READ = clz.getDeclaredMethod("canRead", File.class)).setAccessible(true);
+		//
+		(METHOD_AND = clz.getDeclaredMethod("and", Object.class, Predicate.class, Predicate.class, Predicate.class))
+				.setAccessible(true);
 		//
 	}
 
@@ -1016,6 +1019,23 @@ class MainServletTest {
 		Assert.assertEquals(invoke(METHOD_CAN_READ, null, file), Boolean.TRUE);
 		//
 		Assert.assertEquals(invoke(METHOD_CAN_READ, null, new File("1")), Boolean.FALSE);
+		//
+	}
+
+	@Test
+	void testAnd() throws IllegalAccessException, InvocationTargetException {
+		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.test = Boolean.TRUE;
+			//
+		} // if
+			//
+		final Predicate<?> predicate = Reflection.newProxy(Predicate.class, ih);
+		//
+		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, null, null), Boolean.FALSE);
+		//
+		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, predicate, null), Boolean.FALSE);
 		//
 	}
 

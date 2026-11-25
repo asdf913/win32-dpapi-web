@@ -874,7 +874,8 @@ public class MainServlet extends HttpServlet {
 							//
 						} else {
 							//
-							input = testAndApply(x -> exists(x) && isFile(x) && canRead(x), file,
+							input = testAndApply(
+									x -> and(x, MainServlet::exists, MainServlet::isFile, MainServlet::canRead), file,
 									FileUtils::readFileToByteArray, null);
 							//
 						} // if
@@ -1062,6 +1063,10 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static <T> boolean and(final T value, final Predicate<T> a, final Predicate<T> b, final Predicate<T> c) {
+		return test(a, value) && test(b, value) && test(c, value);
 	}
 
 	private static boolean exists(final File instance) {
