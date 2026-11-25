@@ -813,16 +813,11 @@ public class MainServlet extends HttpServlet {
 				if (cryptProtectData != null && cryptProtectData.entrySet() != null
 						&& cryptProtectData.entrySet().iterator() != null) {
 					//
-					String key = null;
-					//
 					for (final Entry<String, Object> entry : cryptProtectData.entrySet()) {
 						//
-						if (!containsKey(map, key = getKey(entry))) {
-							//
-							put(map, key, getValue(entry));
-							//
-						} // if
-							//
+						testAndAccept((a, b) -> !containsKey(a, getKey(b)), map, entry,
+								(a, b) -> put(a, getKey(b), getValue(b)));
+						//
 					} // for
 						//
 				} // if
