@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
@@ -896,7 +897,7 @@ public class MainServlet extends HttpServlet {
 						//
 					} // if
 						//
-					try (final OutputStream os = response != null ? response.getOutputStream() : null) {
+					try (final OutputStream os = getOutputStream(response)) {
 						//
 						write(os, output);
 						//
@@ -1065,6 +1066,10 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static ServletOutputStream getOutputStream(final ServletResponse instance) throws IOException {
+		return instance != null ? instance.getOutputStream() : null;
 	}
 
 	private static <E> void add(final Collection<E> instance, final E item) {

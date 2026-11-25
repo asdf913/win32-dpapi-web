@@ -161,10 +161,18 @@ class MainServletTest {
 					//
 			} // if
 				//
-			if (proxy instanceof ServletResponse && Objects.equals(name, "getWriter")) {
+			if (proxy instanceof ServletResponse) {
 				//
-				return writer;
-				//
+				if (Objects.equals(name, "getWriter")) {
+					//
+					return writer;
+					//
+				} else if (Objects.equals(name, "getOutputStream")) {
+					//
+					return null;
+					//
+				} // if
+					//
 			} else if (proxy instanceof Collection) {
 				//
 				if (Objects.equals(name, "contains")) {
