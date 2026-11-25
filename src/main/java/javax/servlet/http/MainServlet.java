@@ -890,13 +890,9 @@ public class MainServlet extends HttpServlet {
 				//
 				if (file != null) {
 					//
-					if (response != null) {
-						//
-						response.setHeader("Content-Disposition",
-								String.format("attachment; filename=\"%1$s.%2$s\"", fileName, "cryptProtectData"));
-						//
-					} // if
-						//
+					setHeader(response, "Content-Disposition",
+							String.format("attachment; filename=\"%1$s.%2$s\"", fileName, "cryptProtectData"));
+					//
 					try (final OutputStream os = getOutputStream(response)) {
 						//
 						write(os, output);
@@ -1066,6 +1062,12 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static void setHeader(final HttpServletResponse instance, final String name, final String value) {
+		if (instance != null) {
+			instance.setHeader(name, value);
+		}
 	}
 
 	private static ServletOutputStream getOutputStream(final ServletResponse instance) throws IOException {
