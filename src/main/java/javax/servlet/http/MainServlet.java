@@ -1,7 +1,9 @@
 package javax.servlet.http;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.annotation.ElementType;
@@ -15,6 +17,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.nio.file.FileSystems;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +57,10 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -742,116 +749,258 @@ public class MainServlet extends HttpServlet {
 		//
 		final String servletPath = getServletPath(request);
 		//
-		try (final Writer writer = getWriter(response)) {
+		byte[] input = getBytes(getParameter(request, "input"));
+		//
+		Integer flags = valueOf(getParameter(request, FLAGS));
+		//
+		final byte[] entropy = getBytes(getParameter(request, "entropy"));
+		//
+		if (Objects.equals(servletPath, "/cryptProtectData")) {
 			//
-			final byte[] input = getBytes(getParameter(request, "input"));
-			//
-			final Integer flags = valueOf(getParameter(request, FLAGS));
-			//
-			final byte[] entropy = getBytes(getParameter(request, "entropy"));
-			//
-			if (Objects.equals(servletPath, "/cryptProtectData")) {
+			try {
 				//
-				try {
+				final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+				//
+				final Map<String, Class<?>> encodingMap = getEncodingMap(getContextClassLoader(Thread.currentThread()));
+				//
+				final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+				//
+				Arrays.sort(encodings, MainServlet::compare);
+				//
+				put(map, ENCODINGS, encodings);
+				//
+				String encoding = getParameter(request, ENCODING);
+				//
+				put(map, ENCODING, encoding);
+				//
+				final List<Method> ms = collect(filter(
+						testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream, null),
+						m -> Boolean.logicalAnd(Objects.equals(getName(m), "secure"), getParameterCount(m) == 0)),
+						Collectors.toList());
+				//
+				final RandomUtils randomUtils = cast(RandomUtils.class,
+						testAndApply(MainServlet::isStatic,
+								testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
+								Narcissus::invokeStaticMethod, null));
+				//
+				String description = getParameter(request, "description");
+				//
+				String json = getParameter(request, "json");
+				//
+				Throwable throwable = null;
+				//
+				File file = null;
+				//
+				String fileName = null;
+				//
+				if (ServletFileUpload.isMultipartContent(request)) {
 					//
-					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+					final List<FileItem> fileItems = new ServletFileUpload(new DiskFileItemFactory())
+							.parseRequest(request);
 					//
-					final Map<String, Class<?>> encodingMap = getEncodingMap(
-							getContextClassLoader(Thread.currentThread()));
+					FileItem fileItem = null;
 					//
-					final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+					String fieldName, string = null;
 					//
-					Arrays.sort(encodings, MainServlet::compare);
+					Collection<File> files = null;
 					//
-					put(map, ENCODINGS, encodings);
+					Field field = null;
 					//
-					final String encoding = getParameter(request, ENCODING);
-					//
-					put(map, ENCODING, encoding);
-					//
-					final List<Method> ms = collect(filter(
-							testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream,
-									null),
-							m -> Boolean.logicalAnd(Objects.equals(getName(m), "secure"), getParameterCount(m) == 0)),
-							Collectors.toList());
-					//
-					final RandomUtils randomUtils = cast(RandomUtils.class, testAndApply(MainServlet::isStatic,
-							testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
-							Narcissus::invokeStaticMethod, null));
-					//
-					put(map, "output", testAndApply(Objects::nonNull, testAndApply(Objects::nonNull,
-							cryptProtectData(input, flags, entropy, getParameter(request, "description"),
-									() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100))),
-							x -> encode(
-									cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-									x),
-							null), String::new, null));
-					//
-					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
+					for (int i = 0; i < IterableUtils.size(fileItems); i++) {
 						//
-						write(writer,
-								new ObjectMapper()
-										.writeValueAsString(collect(
-												filter(stream(entrySet(map)),
-														x -> contains(Arrays.asList(String.class),
-																getClass(getValue(x)))),
-												Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+						if ((fileItem = IterableUtils.get(fileItems, i)) == null) {
+							//
+							continue;
+							//
+						} // if
+							//
+						if (fileItem.isFormField()) {
+							//
+							put(map, fieldName = fileItem.getFieldName(), string = fileItem.getString());
+							//
+							if (Objects.equals(fieldName, "input")) {
+								//
+								input = getBytes(string);
+								//
+							} else if (Objects.equals(fieldName, ENCODING)) {
+								//
+								encoding = string;
+								//
+							} else if (Objects.equals(fieldName, FLAGS)) {
+								//
+								flags = valueOf(string);
+								//
+							} else if (Objects.equals(fieldName, "description")) {
+								//
+								description = string;
+								//
+							} else if (Objects.equals(fieldName, "json")) {
+								//
+								json = string;
+								//
+							} // if
+								//
+						} else if (StringUtils.isNotEmpty(fileName = fileItem.getName())) {
+							//
+							if ((files = ObjectUtils.getIfNull(files, ArrayList::new)) != null) {
+								//
+								if (field == null) {
+									//
+									field = testAndApply(x -> IterableUtils.size(x) == 1,
+											collect(filter(
+													stream(testAndApply(Objects::nonNull, getClass(fileItem),
+															FieldUtils::getAllFieldsList, null)),
+													x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
+											x -> IterableUtils.get(x, 0), null);
+									//
+								} // if
+									//
+								if (field != null
+										&& (file = cast(File.class, Narcissus.getField(fileItem, field))) != null) {
+									//
+									files.add(file);
+									//
+								} // if
+									//
+							} // if
+								//
+						} // if
+							//
+					} // for
 						//
+					if ((file = testAndApply(x -> IterableUtils.size(x) == 1, files, x -> IterableUtils.get(x, 0),
+							null)) != null) {
+						//
+						if (input != null && input.length > 0) {
+							//
+							put(map, "throwable", throwable = new RuntimeException("Please pass input or file"));
+							//
+						} else {
+							//
+							input = testAndApply(x -> x != null && x.exists() && x.isFile() && x.canRead(), file,
+									FileUtils::readFileToByteArray, null);
+							//
+						} // if
+							//
+					} // if
+						//
+				} // if
+					//
+				final String _encoding = encoding;
+				//
+				final byte[] output = cryptProtectData(input, flags, entropy, description,
+						() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100)));
+				//
+				if (file != null) {
+					//
+					if (response != null) {
+						//
+						response.setHeader("Content-Disposition",
+								String.format("attachment; filename=\"%1$s.%2$s\"", fileName, "cryptProtectData"));
+						//
+					} // if
+						//
+					try (final OutputStream os = response != null ? response.getOutputStream() : null) {
+						//
+						if (os != null) {
+							//
+							os.write(output);
+							//
+						} // if
+							//
+					} finally {
+						//
+						FileUtils.deleteQuietly(file);
+						//
+					} // try
+						//
+					return;
+					//
+				} // if
+					//
+				put(map, "output",
+						testAndApply(Objects::nonNull,
+								testAndApply(Objects::nonNull, output,
+										x -> encode(cast(BinaryEncoder.class,
+												newInstance(MapUtils.getObject(encodingMap, _encoding))), x),
+										null),
+								String::new, null));
+				//
+				try (final Writer writer = getWriter(response)) {
+					//
+					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(json))) {
+						//
+						if (throwable != null) {
+							//
+							write(writer, new ObjectMapper().writeValueAsString(
+									Collections.singletonMap("errorMessage", getMessage(throwable))));
+							//
+						} else {
+							//
+							write(writer, new ObjectMapper().writeValueAsString(collect(
+									filter(stream(entrySet(map)),
+											x -> contains(Arrays.asList(String.class), getClass(getValue(x)))
+													&& contains(Arrays.asList("output", "encoding"), getKey(x))),
+									Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+							//
+						} // if
+							//
 						return;
 						//
 					} // if
 						//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
-				} catch (final Exception e) {
-					//
-					throw new ServletException(getMessage(e), e);
-					//
 				} // try
 					//
-			} else if (Objects.equals(servletPath, "/cryptUnprotectData")) {
+			} catch (final Exception e) {
+				//
+				throw new ServletException(getMessage(e), e);
+				//
+			} // try
+				//
+		} else if (Objects.equals(servletPath, "/cryptUnprotectData")) {
+			//
+			try {
+				//
+				final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+				//
+				final Map<String, Class<?>> encodingMap = getEncodingMap(getContextClassLoader(Thread.currentThread()));
+				//
+				final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+				//
+				Arrays.sort(encodings, MainServlet::compare);
+				//
+				put(map, ENCODINGS, encodings);
+				//
+				final String encoding = getParameter(request, ENCODING);
+				//
+				put(map, ENCODING, encoding);
+				//
+				Throwable throwable = null;
 				//
 				try {
 					//
-					final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+					put(map, "output", testAndApply(Objects::nonNull, cryptUnprotectData(
+							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
+									input),
+							flags, entropy, () -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
+							String::new, null));
 					//
-					final Map<String, Class<?>> encodingMap = getEncodingMap(
-							getContextClassLoader(Thread.currentThread()));
+				} catch (final Win32Exception e) {
 					//
-					final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+					throwable = process(e, intValue(primaryLanguage, WinNT.LANG_ENGLISH),
+							intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US));
 					//
-					Arrays.sort(encodings, MainServlet::compare);
+				} catch (final Exception e) {
 					//
-					put(map, ENCODINGS, encodings);
+					throwable = e;
 					//
-					final String encoding = getParameter(request, ENCODING);
+				} // try
 					//
-					put(map, ENCODING, encoding);
-					//
-					Throwable throwable = null;
-					//
-					try {
-						//
-						put(map, "output",
-								testAndApply(Objects::nonNull, cryptUnprotectData(
-										decode(cast(BinaryDecoder.class,
-												newInstance(MapUtils.getObject(encodingMap, encoding))), input),
-										flags, entropy,
-										() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
-										String::new, null));
-						//
-					} catch (final Win32Exception e) {
-						//
-						throwable = process(e, intValue(primaryLanguage, WinNT.LANG_ENGLISH),
-								intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US));
-						//
-					} catch (final Exception e) {
-						//
-						throwable = e;
-						//
-					} // try
-						//
-					put(map, "throwable", throwable);
+				put(map, "throwable", throwable);
+				//
+				try (final Writer writer = getWriter(response)) {
 					//
 					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
 						//
@@ -901,15 +1050,15 @@ public class MainServlet extends HttpServlet {
 						//
 					process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
 					//
-				} catch (final Exception e) {
-					//
-					throw new ServletException(getMessage(e), e);
-					//
 				} // try
 					//
-			} // if
+			} catch (final Exception e) {
 				//
-		} // try
+				throw new ServletException(getMessage(e), e);
+				//
+			} // try
+				//
+		} // if
 			//
 	}
 

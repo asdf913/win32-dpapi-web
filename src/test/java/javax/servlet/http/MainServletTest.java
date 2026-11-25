@@ -173,7 +173,8 @@ class MainServletTest {
 					//
 				} // if
 					//
-			} else if (proxy instanceof HttpServletRequest && Objects.equals(name, "getServletPath")) {
+			} else if (proxy instanceof HttpServletRequest
+					&& contains(Arrays.asList("getServletPath", "getMethod"), name)) {
 				//
 				return servletPath;
 				//
