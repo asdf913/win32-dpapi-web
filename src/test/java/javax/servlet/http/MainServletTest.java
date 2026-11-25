@@ -1,6 +1,7 @@
 package javax.servlet.http;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -73,7 +74,7 @@ class MainServletTest {
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
-			METHOD_ADD = null;
+			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -113,6 +114,12 @@ class MainServletTest {
 		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
 		//
 		(METHOD_ADD = clz.getDeclaredMethod("add", Collection.class, Object.class)).setAccessible(true);
+		//
+		(METHOD_EXISTS = clz.getDeclaredMethod("exists", File.class)).setAccessible(true);
+		//
+		(METHOD_IS_FILE = clz.getDeclaredMethod("isFile", File.class)).setAccessible(true);
+		//
+		(METHOD_CAN_READ = clz.getDeclaredMethod("canRead", File.class)).setAccessible(true);
 		//
 	}
 
@@ -275,6 +282,8 @@ class MainServletTest {
 
 	private Iterable<String> strings = null;
 
+	private File file = null;
+
 	@BeforeMethod
 	void beforeMethod() throws Throwable {
 		//
@@ -285,6 +294,8 @@ class MainServletTest {
 		ih = new IH();
 		//
 		strings = getStrings(clz);
+		//
+		file = new File("pom.xml");
 		//
 	}
 
@@ -978,6 +989,33 @@ class MainServletTest {
 	void testPutAll() throws IllegalAccessException, InvocationTargetException {
 		//
 		Assert.assertNull(invoke(METHOD_PUT_ALL, null, Collections.emptyMap(), null));
+		//
+	}
+
+	@Test
+	void testExists() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertEquals(invoke(METHOD_EXISTS, null, file), Boolean.TRUE);
+		//
+		Assert.assertEquals(invoke(METHOD_EXISTS, null, new File("1")), Boolean.FALSE);
+		//
+	}
+
+	@Test
+	void testIsFile() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertEquals(invoke(METHOD_IS_FILE, null, file), Boolean.TRUE);
+		//
+		Assert.assertEquals(invoke(METHOD_IS_FILE, null, new File(".")), Boolean.FALSE);
+		//
+	}
+
+	@Test
+	void testCanRead() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertEquals(invoke(METHOD_CAN_READ, null, file), Boolean.TRUE);
+		//
+		Assert.assertEquals(invoke(METHOD_CAN_READ, null, new File("1")), Boolean.FALSE);
 		//
 	}
 

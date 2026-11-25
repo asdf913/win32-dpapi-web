@@ -874,7 +874,7 @@ public class MainServlet extends HttpServlet {
 							//
 						} else {
 							//
-							input = testAndApply(x -> x != null && x.exists() && x.isFile() && x.canRead(), file,
+							input = testAndApply(x -> exists(x) && isFile(x) && canRead(x), file,
 									FileUtils::readFileToByteArray, null);
 							//
 						} // if
@@ -1062,6 +1062,18 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static boolean exists(final File instance) {
+		return instance != null && instance.getPath() != null && instance.exists();
+	}
+
+	private static boolean isFile(final File instance) {
+		return instance != null && instance.getPath() != null && instance.isFile();
+	}
+
+	private static boolean canRead(final File instance) {
+		return instance != null && instance.getPath() != null && instance.canRead();
 	}
 
 	private static void setHeader(final HttpServletResponse instance, final String name, final String value) {
