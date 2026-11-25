@@ -81,7 +81,7 @@ class MainServletTest {
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
 			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
 			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
-			METHOD_AND, METHOD_GET_FORM_FIELD_MAP = null;
+			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -147,6 +147,8 @@ class MainServletTest {
 				.setAccessible(true);
 		//
 		(METHOD_GET_FORM_FIELD_MAP = clz.getDeclaredMethod("getFormFieldMap", Iterable.class)).setAccessible(true);
+		//
+		(METHOD_GET_NOT_FORM_FIELDS = clz.getDeclaredMethod("getNotFormFields", Iterable.class)).setAccessible(true);
 		//
 	}
 
@@ -1226,6 +1228,33 @@ class MainServletTest {
 		} // if
 			//
 		Assert.assertEquals(invoke(METHOD_GET_FORM_FIELD_MAP, null, iterable), Collections.singletonMap(null, null));
+		//
+	}
+
+	@Test
+	void testGetNotFormFields() throws IllegalAccessException, InvocationTargetException {
+		//
+		Assert.assertNull(invoke(METHOD_GET_NOT_FORM_FIELDS, null, Collections.singleton(null)));
+		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.isFormField = Boolean.TRUE;
+			//
+		} // if
+			//
+		final FileItem fileItem = Reflection.newProxy(FileItem.class, ih);
+		//
+		final Iterable<FileItem> iterable = Collections.singleton(fileItem);
+		//
+		Assert.assertNull(invoke(METHOD_GET_NOT_FORM_FIELDS, null, iterable));
+		//
+		if (ih != null) {
+			//
+			ih.isFormField = Boolean.FALSE;
+			//
+		} // if
+			//
+		Assert.assertNotNull(invoke(METHOD_GET_NOT_FORM_FIELDS, null, iterable));
 		//
 	}
 

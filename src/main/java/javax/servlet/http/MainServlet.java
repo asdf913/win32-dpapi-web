@@ -56,6 +56,7 @@ import org.apache.commons.codec.BinaryDecoder;
 import org.apache.commons.codec.BinaryEncoder;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.EncoderException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.fileupload.FileItem;
@@ -1077,48 +1078,34 @@ public class MainServlet extends HttpServlet {
 			//
 			putAll(map, getFormFieldMap(fileItems));
 			//
-			FileItem fileItem = null;
-			//
 			String fileName = null;
 			//
-			Collection<File> files = null;
+			final Collection<FileItem> collection = getNotFormFields(fileItems);
 			//
-			Field field = null;
+			final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+					collect(filter(
+							stream(testAndApply(Objects::nonNull,
+									getClass(testAndApply(CollectionUtils::isNotEmpty, collection,
+											x -> IterableUtils.get(x, 0), null)),
+									FieldUtils::getAllFieldsList, null)),
+							x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
+					x -> IterableUtils.get(x, 0), null);
 			//
-			File file = null;
+			final Collection<File> files = stream(collection)
+					.map(x -> cast(File.class, x != null && field != null ? Narcissus.getField(x, field) : null))
+					.filter(Objects::nonNull).collect(Collectors.toList());
 			//
-			for (int i = 0; i < IterableUtils.size(fileItems); i++) {
-				//
-				if ((fileItem = IterableUtils.get(fileItems, i)) != null && !fileItem.isFormField()
-						&& StringUtils.isNotEmpty(fileName = fileItem.getName())) {
-					//
-					if (field == null) {
-						//
-						field = testAndApply(x -> IterableUtils.size(x) == 1,
-								collect(filter(
-										stream(testAndApply(Objects::nonNull, getClass(fileItem),
-												FieldUtils::getAllFieldsList, null)),
-										x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
-								x -> IterableUtils.get(x, 0), null);
-						//
-					} // if
-						//
-					if (field != null && (file = cast(File.class, Narcissus.getField(fileItem, field))) != null) {
-						//
-						add(files = ObjectUtils.getIfNull(files, ArrayList::new), file);
-						//
-					} // if
-						//
-				} // if
-					//
-			} // for
-				//
 			if (IterableUtils.size(files) > 1) {
 				//
 				put(map, THROWABLE, new RuntimeException("More than one file found"));
 				//
-			} else if ((file = testAndApply(x -> IterableUtils.size(x) == 1, files, x -> IterableUtils.get(x, 0),
-					null)) != null) {
+				return map;
+				//
+			} // if
+				//
+			final File file = testAndApply(x -> IterableUtils.size(x) == 1, files, x -> IterableUtils.get(x, 0), null);
+			//
+			if (file != null) {
 				//
 				put(map, "file", file);
 				//
@@ -1129,6 +1116,26 @@ public class MainServlet extends HttpServlet {
 		} // if
 			//
 		return map;
+		//
+	}
+
+	private static Collection<FileItem> getNotFormFields(final Iterable<FileItem> fileItems) {
+		//
+		FileItem fileItem = null;
+		//
+		Collection<FileItem> collection = null;
+		//
+		for (int i = 0; i < IterableUtils.size(fileItems); i++) {
+			//
+			if ((fileItem = IterableUtils.get(fileItems, i)) != null && !fileItem.isFormField()) {
+				//
+				add(collection = ObjectUtils.getIfNull(collection, ArrayList::new), fileItem);
+				//
+			} // if
+				//
+		} // for
+			//
+		return collection;
 		//
 	}
 
