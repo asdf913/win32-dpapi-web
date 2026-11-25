@@ -78,7 +78,7 @@ class MainServletTest {
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
 			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS, METHOD_PUT,
-			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY = null;
+			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY, METHOD_AND = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -136,6 +136,9 @@ class MainServletTest {
 		(METHOD_GET_BYTES = clz.getDeclaredMethod("getBytes", String.class)).setAccessible(true);
 		//
 		(METHOD_CONTAINS_KEY = clz.getDeclaredMethod("containsKey", Map.class, Object.class)).setAccessible(true);
+		//
+		(METHOD_AND = clz.getDeclaredMethod("and", Object.class, Predicate.class, Predicate.class, Predicate.class))
+				.setAccessible(true);
 		//
 	}
 
@@ -1151,6 +1154,23 @@ class MainServletTest {
 	void testContainsKey() throws IllegalAccessException, InvocationTargetException {
 		//
 		Assert.assertEquals(invoke(METHOD_CONTAINS_KEY, null, Collections.singletonMap(null, null), ""), Boolean.FALSE);
+		//
+	}
+
+	@Test
+	void testAnd() throws IllegalAccessException, InvocationTargetException {
+		//
+		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+			//
+			ih.test = Boolean.TRUE;
+			//
+		} // if
+			//
+		final Predicate<?> predicate = Reflection.newProxy(Predicate.class, ih);
+		//
+		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, null, null), Boolean.FALSE);
+		//
+		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, predicate, null), Boolean.FALSE);
 		//
 	}
 

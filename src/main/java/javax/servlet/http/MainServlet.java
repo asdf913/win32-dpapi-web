@@ -803,7 +803,8 @@ public class MainServlet extends HttpServlet {
 					//
 					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
 					//
-				} else if (Boolean.logicalAnd(input == null, exists(file) && isFile(file) && canRead(file))) {
+				} else if (Boolean.logicalAnd(input == null,
+						and(file, MainServlet::exists, MainServlet::isFile, MainServlet::canRead))) {
 					//
 					input = FileUtils.readFileToByteArray(file);
 					//
@@ -1029,6 +1030,10 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static <T> boolean and(final T value, final Predicate<T> a, final Predicate<T> b, final Predicate<T> c) {
+		return test(a, value) && test(b, value) && test(c, value);
 	}
 
 	private static boolean containsKey(final Map<?, ?> instance, final Object key) {
