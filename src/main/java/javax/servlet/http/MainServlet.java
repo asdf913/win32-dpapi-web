@@ -933,11 +933,14 @@ public class MainServlet extends HttpServlet {
 							//
 						} else {
 							//
-							write(writer, new ObjectMapper().writeValueAsString(collect(
-									filter(stream(entrySet(map)),
-											x -> contains(Arrays.asList(String.class), getClass(getValue(x)))
-													&& contains(Arrays.asList("output", "encoding"), getKey(x))),
-									Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+							write(writer,
+									new ObjectMapper().writeValueAsString(collect(
+											filter(stream(entrySet(map)),
+													x -> Boolean.logicalAnd(
+															contains(Arrays.asList(String.class),
+																	getClass(getValue(x))),
+															contains(Arrays.asList("output", "encoding"), getKey(x)))),
+											Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
 							//
 						} // if
 							//
