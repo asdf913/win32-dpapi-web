@@ -113,6 +113,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String OUTPUT = "output";
 
+	private static final String ENTROPY = "entropy";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -849,9 +851,8 @@ public class MainServlet extends HttpServlet {
 				final byte[] output = cryptProtectData(input,
 						valueOf(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, FLAGS)),
 								getParameter(request, FLAGS))),
-						getBytes(
-								ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "entropy")),
-										getParameter(request, "entropy"))),
+						getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENTROPY)),
+								getParameter(request, ENTROPY))),
 						ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "description")),
 								getParameter(request, "description")),
 						() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100)));
@@ -937,7 +938,7 @@ public class MainServlet extends HttpServlet {
 					put(map, OUTPUT, testAndApply(Objects::nonNull, cryptUnprotectData(
 							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
 									getBytes(getParameter(request, "input"))),
-							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, "entropy")),
+							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, ENTROPY)),
 							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
 					//
 				} catch (final Win32Exception e) {
