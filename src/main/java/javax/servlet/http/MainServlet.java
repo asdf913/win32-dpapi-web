@@ -111,6 +111,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String REQUEST = "request";
 
+	private static final String INPUT = "input";
+
 	private static final String OUTPUT = "output";
 
 	private static final String ENTROPY = "entropy";
@@ -789,13 +791,13 @@ public class MainServlet extends HttpServlet {
 				//
 				put(map, ENCODING, encoding);
 				//
-				byte[] input = getBytes(getParameter(request, "input"));
+				byte[] input = getBytes(getParameter(request, INPUT));
 				//
 				Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
 				//
 				final File file = getValueByClass(cryptProtectData, File.class);
 				//
-				if (StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, "input")))
+				if (StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)))
 						&& file != null) {
 					//
 					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
@@ -939,7 +941,7 @@ public class MainServlet extends HttpServlet {
 					//
 					put(map, OUTPUT, testAndApply(Objects::nonNull, cryptUnprotectData(
 							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-									getBytes(getParameter(request, "input"))),
+									getBytes(getParameter(request, INPUT))),
 							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, ENTROPY)),
 							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
 					//
