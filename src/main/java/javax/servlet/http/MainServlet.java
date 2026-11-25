@@ -1067,8 +1067,7 @@ public class MainServlet extends HttpServlet {
 		//
 	}
 
-	private static Map<String, Object> cryptProtectData(final HttpServletRequest request)
-			throws FileUploadException, IOException {
+	private static Map<String, Object> cryptProtectData(final HttpServletRequest request) throws FileUploadException {
 		//
 		Map<String, Object> map = null;
 		//
