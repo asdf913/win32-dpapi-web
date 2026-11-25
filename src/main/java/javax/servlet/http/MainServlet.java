@@ -1091,10 +1091,10 @@ public class MainServlet extends HttpServlet {
 							x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
 					x -> IterableUtils.get(x, 0), null);
 			//
-			final Collection<File> files = collect(
-					filter(map(filter(stream(collection), x -> x != null && StringUtils.isNotEmpty(x.getName())), x -> {
-						return cast(File.class, x != null && field != null ? Narcissus.getField(x, field) : null);
-					}), Objects::nonNull), Collectors.toList());
+			final Collection<File> files = collect(filter(
+					map(filter(stream(collection), x -> x != null && StringUtils.isNotEmpty(x.getName())),
+							x -> cast(File.class, x != null && field != null ? Narcissus.getField(x, field) : null)),
+					Objects::nonNull), Collectors.toList());
 			//
 			if (IterableUtils.size(files) > 1) {
 				//
