@@ -1161,8 +1161,9 @@ class MainServletTest {
 				//
 			} // if
 				//
-			Assert.assertNull(
-					invoke(METHOD_CRYPT_PROTECT_DATA, null, Reflection.newProxy(HttpServletRequest.class, ih)));
+			Assert.assertEquals(
+					invoke(METHOD_CRYPT_PROTECT_DATA, null, Reflection.newProxy(HttpServletRequest.class, ih)),
+					Collections.emptyMap());
 			//
 		} // try
 			//
