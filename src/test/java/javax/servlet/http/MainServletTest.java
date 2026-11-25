@@ -1,7 +1,9 @@
 package javax.servlet.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -577,6 +579,10 @@ class MainServletTest {
 				} else if (Objects.equals(parameterType, Writer.class)) {
 					//
 					add(collection, Narcissus.allocateInstance(StringWriter.class));
+					//
+				} else if (Objects.equals(parameterType, OutputStream.class)) {
+					//
+					add(collection, Narcissus.allocateInstance(ByteArrayOutputStream.class));
 					//
 				} else if (Objects.equals(parameterType, Class.class)) {
 					//

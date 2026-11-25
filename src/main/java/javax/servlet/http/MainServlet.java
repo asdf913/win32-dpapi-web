@@ -898,12 +898,8 @@ public class MainServlet extends HttpServlet {
 						//
 					try (final OutputStream os = response != null ? response.getOutputStream() : null) {
 						//
-						if (os != null) {
-							//
-							os.write(output);
-							//
-						} // if
-							//
+						write(os, output);
+						//
 					} finally {
 						//
 						FileUtils.deleteQuietly(file);
@@ -1075,6 +1071,30 @@ public class MainServlet extends HttpServlet {
 		if (instance != null) {
 			instance.add(item);
 		}
+	}
+
+	private static void write(final OutputStream instance, final byte[] b) throws IOException {
+		//
+		if (instance == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						x -> Objects.equals(getName(x), "buf")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		if (field != null && Narcissus.getField(instance, field) == null) {
+			//
+			return;
+			//
+		} // if
+			//
+		instance.write(b);
+		//
 	}
 
 	private static void write(final Writer instance, final String string) throws IOException {
