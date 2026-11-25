@@ -1,5 +1,6 @@
 package javax.servlet.http;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -37,8 +38,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
@@ -74,7 +77,8 @@ class MainServletTest {
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
-			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_AND = null;
+			METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS, METHOD_PUT,
+			METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -121,8 +125,15 @@ class MainServletTest {
 		//
 		(METHOD_CAN_READ = clz.getDeclaredMethod("canRead", File.class)).setAccessible(true);
 		//
-		(METHOD_AND = clz.getDeclaredMethod("and", Object.class, Predicate.class, Predicate.class, Predicate.class))
+		(METHOD_GET_VALUE_BY_CLASS = clz.getDeclaredMethod("getValueByClass", Map.class, Class.class))
 				.setAccessible(true);
+		//
+		(METHOD_PUT = clz.getDeclaredMethod("put", Map.class, Object.class, Object.class)).setAccessible(true);
+		//
+		(METHOD_CRYPT_PROTECT_DATA = clz.getDeclaredMethod("cryptProtectData", HttpServletRequest.class))
+				.setAccessible(true);
+		//
+		(METHOD_GET_BYTES = clz.getDeclaredMethod("getBytes", String.class)).setAccessible(true);
 		//
 	}
 
@@ -132,11 +143,13 @@ class MainServletTest {
 
 		private Boolean contains, test, add;
 
-		private String servletPath;
+		private String servletPath, method, contentType;
 
-		private Integer serverPort, modifiers;
+		private Integer serverPort, modifiers, contentLength;
 
 		private Map<Object, Object> initParameters, parameters;
+
+		private ServletInputStream servletInputStream = null;
 
 		@Override
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
@@ -155,13 +168,25 @@ class MainServletTest {
 				//
 			} else if (proxy instanceof ServletRequest) {
 				//
-				if (contains(Arrays.asList("getScheme", "getServerName"), name)) {
+				if (contains(Arrays.asList("getScheme", "getServerName", "getHeader", "getCharacterEncoding"), name)) {
 					//
 					return null;
 					//
 				} else if (Objects.equals(name, "getServerPort")) {
 					//
 					return serverPort;
+					//
+				} else if (Objects.equals(name, "getContentType")) {
+					//
+					return contentType;
+					//
+				} else if (Objects.equals(name, "getContentLength")) {
+					//
+					return contentLength;
+					//
+				} else if (Objects.equals(name, "getInputStream")) {
+					//
+					return servletInputStream;
 					//
 				} else if (Objects.equals(name, "getParameter") && args != null && args.length > 0) {
 					//
@@ -199,11 +224,18 @@ class MainServletTest {
 					//
 				} // if
 					//
-			} else if (proxy instanceof HttpServletRequest
-					&& contains(Arrays.asList("getServletPath", "getMethod"), name)) {
+			} else if (proxy instanceof HttpServletRequest) {
 				//
-				return servletPath;
-				//
+				if (Objects.equals(name, "getServletPath")) {
+					//
+					return servletPath;
+					//
+				} else if (Objects.equals(name, "getMethod")) {
+					//
+					return this.method;
+					//
+				} // if
+					//
 			} else if (proxy instanceof Member) {
 				//
 				if (Objects.equals(name, "getName")) {
@@ -790,7 +822,7 @@ class MainServletTest {
 					//
 					if (Objects.equals(getType(x), Integer.class) && ih != null && ih.initParameters != null) {
 						//
-						ih.initParameters.put(getName(x), getName(f));
+						put(ih.initParameters, getName(x), getName(f));
 						//
 					} // if
 						//
@@ -1023,20 +1055,86 @@ class MainServletTest {
 	}
 
 	@Test
-	void testAnd() throws IllegalAccessException, InvocationTargetException {
+	void testGetValueByClass() throws Throwable {
 		//
-		if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+		Assert.assertNull(invoke(METHOD_GET_VALUE_BY_CLASS, null, Collections.singletonMap(null, null), String.class));
+		//
+		final String empty = "";
+		//
+		final Map<Object, Object> map = new LinkedHashMap<>(Collections.singletonMap(empty, empty));
+		//
+		Assert.assertEquals(invoke(METHOD_GET_VALUE_BY_CLASS, null, map, String.class), empty);
+		//
+		put(map, "1", Integer.toString(1));
+		//
+		Assert.assertThrows(Throwable.class, () -> invoke(METHOD_GET_VALUE_BY_CLASS, null, map, String.class));
+		//
+	}
+
+	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) throws Throwable {
+		try {
+			invoke(METHOD_PUT, null, instance, key, value);
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
+	}
+
+	@Test
+	void testCryptProtectData() throws Throwable {
+		//
+		try (final InputStream is = new ByteArrayInputStream(getBytes(""))) {
 			//
-			ih.test = Boolean.TRUE;
+			if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
+				//
+				ih.method = "POST";
+				//
+				ih.contentType = "multipart/form-data;boundary=----";
+				//
+				ih.contentLength = Integer.valueOf(1);
+				//
+				ih.servletInputStream = new ServletInputStream() {
+
+					@Override
+					public int read() throws IOException {
+						return is.read();
+					}
+
+					@Override
+					public void setReadListener(final ReadListener readListener) {
+					}
+
+					@Override
+					public boolean isReady() {
+						return false;
+					}
+
+					@Override
+					public boolean isFinished() {
+						return false;
+					}
+				};
+				//
+			} // if
+				//
+			Assert.assertNull(
+					invoke(METHOD_CRYPT_PROTECT_DATA, null, Reflection.newProxy(HttpServletRequest.class, ih)));
 			//
-		} // if
+		} // try
 			//
-		final Predicate<?> predicate = Reflection.newProxy(Predicate.class, ih);
-		//
-		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, null, null), Boolean.FALSE);
-		//
-		Assert.assertEquals(invoke(METHOD_AND, null, null, predicate, predicate, null), Boolean.FALSE);
-		//
+	}
+
+	private static byte[] getBytes(final String instance) throws Throwable {
+		try {
+			final Object obj = invoke(METHOD_GET_BYTES, null, instance);
+			if (obj == null) {
+				return null;
+			} else if (obj instanceof byte[]) {
+				return (byte[]) obj;
+			}
+			throw new Throwable(Objects.toString(getClass(obj)));
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
+		}
 	}
 
 }
