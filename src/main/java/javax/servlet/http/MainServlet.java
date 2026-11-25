@@ -890,7 +890,7 @@ public class MainServlet extends HttpServlet {
 										filter(stream(entrySet(map)),
 												x -> Boolean.logicalAnd(
 														contains(Arrays.asList(String.class), getClass(getValue(x))),
-														contains(Arrays.asList("output", "encoding"), getKey(x)))),
+														contains(Arrays.asList("output", ENCODING), getKey(x)))),
 										Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
 						//
 					} else {
