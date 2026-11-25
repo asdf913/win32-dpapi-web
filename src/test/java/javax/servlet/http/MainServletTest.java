@@ -70,8 +70,8 @@ class MainServletTest {
 
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
-			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN,
-			METHOD_PUT_ALL = null;
+			METHOD_TEST_AND_ACCEPT, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS, METHOD_TEST_AND_RUN, METHOD_PUT_ALL,
+			METHOD_ADD = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -110,13 +110,15 @@ class MainServletTest {
 		//
 		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
 		//
+		(METHOD_ADD = clz.getDeclaredMethod("add", Collection.class, Object.class)).setAccessible(true);
+		//
 	}
 
 	private static class IH implements InvocationHandler {
 
 		private PrintWriter writer;
 
-		private Boolean contains, test;
+		private Boolean contains, test, add;
 
 		private String servletPath;
 
@@ -170,6 +172,10 @@ class MainServletTest {
 				} else if (contains(Arrays.asList("stream", "toArray"), name)) {
 					//
 					return null;
+					//
+				} else if (Objects.equals(name, "add")) {
+					//
+					return add;
 					//
 				} // if
 					//
@@ -707,9 +713,11 @@ class MainServletTest {
 		return instance != null ? instance.toArray() : null;
 	}
 
-	private static <E> void add(final Collection<E> instance, final E item) {
-		if (instance != null) {
-			instance.add(item);
+	private static <E> void add(final Collection<E> instance, final E item) throws Throwable {
+		try {
+			invoke(METHOD_ADD, null, instance, item);
+		} catch (final InvocationTargetException e) {
+			throw e.getTargetException();
 		}
 	}
 

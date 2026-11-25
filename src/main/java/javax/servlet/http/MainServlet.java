@@ -842,26 +842,22 @@ public class MainServlet extends HttpServlet {
 								//
 						} else if (StringUtils.isNotEmpty(fileName = fileItem.getName())) {
 							//
-							if ((files = ObjectUtils.getIfNull(files, ArrayList::new)) != null) {
+							if (field == null) {
 								//
-								if (field == null) {
-									//
-									field = testAndApply(x -> IterableUtils.size(x) == 1,
-											collect(filter(
-													stream(testAndApply(Objects::nonNull, getClass(fileItem),
-															FieldUtils::getAllFieldsList, null)),
-													x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
-											x -> IterableUtils.get(x, 0), null);
-									//
-								} // if
-									//
-								if (field != null
-										&& (file = cast(File.class, Narcissus.getField(fileItem, field))) != null) {
-									//
-									files.add(file);
-									//
-								} // if
-									//
+								field = testAndApply(x -> IterableUtils.size(x) == 1,
+										collect(filter(
+												stream(testAndApply(Objects::nonNull, getClass(fileItem),
+														FieldUtils::getAllFieldsList, null)),
+												x -> Objects.equals(getName(x), "tempFile")), Collectors.toList()),
+										x -> IterableUtils.get(x, 0), null);
+								//
+							} // if
+								//
+							if (field != null
+									&& (file = cast(File.class, Narcissus.getField(fileItem, field))) != null) {
+								//
+								add(files = ObjectUtils.getIfNull(files, ArrayList::new), file);
+								//
 							} // if
 								//
 						} // if
@@ -1060,6 +1056,12 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static <E> void add(final Collection<E> instance, final E item) {
+		if (instance != null) {
+			instance.add(item);
+		}
 	}
 
 	private static void write(final Writer instance, final String string) throws IOException {
