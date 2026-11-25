@@ -797,8 +797,9 @@ public class MainServlet extends HttpServlet {
 				//
 				final File file = getValueByClass(cryptProtectData, File.class);
 				//
-				if (StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)))
-						&& file != null) {
+				if (Boolean.logicalAnd(
+						StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
+						file != null)) {
 					//
 					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
 					//
