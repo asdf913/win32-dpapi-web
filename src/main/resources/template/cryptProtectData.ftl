@@ -2,9 +2,6 @@
 	<head>
 		<script>
 		if(typeof document==="object"&&document!==null&&typeof document.addEventListener==="function"){
-			document.addEventListener("DOMContentLoaded",()=>{
-				[...document.querySelectorAll("td")].find(el => window.getComputedStyle(el).visibility=="hidden").style.height=window.getComputedStyle(document.querySelector("input").parentElement.parentElement).height;
-			});
 			<#if throwable??>
     		function closeAlert(){
     			var topAlert=document.getElementById("topAlert");
