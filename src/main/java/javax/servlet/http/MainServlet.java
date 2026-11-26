@@ -726,20 +726,62 @@ public class MainServlet extends HttpServlet {
 				//
 				put(map, ENCODINGS, encodings);
 				//
-				final String encoding = getParameter(request, ENCODING);
+				final Map<String, Object> cryptProtectData = cryptProtectData(request);
+				//
+				final String encoding = ObjectUtils.getIfNull(
+						Objects.toString(MapUtils.getObject(cryptProtectData, ENCODING)),
+						getParameter(request, ENCODING));
 				//
 				put(map, ENCODING, encoding);
 				//
-				Throwable throwable = null;
+				byte[] input = decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
+						getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)),
+								getParameter(request, INPUT))));
+				//
+				Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
+				//
+				final File file = getValueByClass(cryptProtectData, File.class);
+				//
+				if (Boolean.logicalAnd(
+						StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
+						file != null)) {
+					//
+					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
+					//
+				} else if (Boolean.logicalAnd(input == null || input.length == 0,
+						and(file, MainServlet::exists, MainServlet::isFile, MainServlet::canRead))) {
+					//
+					input = FileUtils.readFileToByteArray(file);
+					//
+				} // if
+					//
+				forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
+				//
+				final boolean json = Objects.equals(Boolean.TRUE,
+						Boolean.valueOf(
+								ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "json")),
+										getParameter(request, "json"))));
+				//
+				byte[] output = null;
 				//
 				try {
 					//
-					put(map, OUTPUT, testAndApply(Objects::nonNull, cryptUnprotectData(
-							decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
-									getBytes(getParameter(request, INPUT))),
-							valueOf(getParameter(request, FLAGS)), getBytes(getParameter(request, ENTROPY)),
-							() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))), String::new, null));
-					//
+					if (throwable == null) {
+						//
+						put(map, OUTPUT,
+								testAndApply(Objects::nonNull,
+										output = cryptUnprotectData(input,
+												valueOf(ObjectUtils.getIfNull(
+														Objects.toString(MapUtils.getObject(cryptProtectData, FLAGS)),
+														getParameter(request, FLAGS))),
+												getBytes(ObjectUtils.getIfNull(
+														Objects.toString(MapUtils.getObject(cryptProtectData, ENTROPY)),
+														getParameter(request, ENTROPY))),
+												() -> getBytes(nextAlphanumeric(RandomStringUtils.secure(), 1, 100))),
+										String::new, null));
+						//
+					} // if
+						//
 				} catch (final Win32Exception e) {
 					//
 					final ServletContext servletContext = getServletContext(request);
@@ -758,9 +800,34 @@ public class MainServlet extends HttpServlet {
 					//
 				put(map, THROWABLE, throwable);
 				//
+				if (file != null && throwable == null) {
+					//
+					setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
+							MapUtils.getObject(cryptProtectData, "fileName"), "cryptUnprotectData"));
+					//
+					try (final OutputStream os = getOutputStream(response)) {
+						//
+						write(os, output);
+						//
+					} finally {
+						//
+						FileUtils.deleteQuietly(file);
+						//
+					} // try
+						//
+					return;
+					//
+				} // if
+					//
+				if (handleThrowable(throwable, response, json, configuration, servletPath, map)) {
+					//
+					return;
+					//
+				} // if
+					//
 				try (final Writer writer = getWriter(response)) {
 					//
-					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
+					if (json) {
 						//
 						write(writer,
 								new ObjectMapper().writeValueAsString(collect(
@@ -791,6 +858,7 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+
 	}
 
 	private static ServletContext getServletContext(final ServletRequest instance) {
@@ -831,7 +899,8 @@ public class MainServlet extends HttpServlet {
 		//
 		put(map, ENCODING, encoding);
 		//
-		byte[] input = getBytes(getParameter(request, INPUT));
+		byte[] input = getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)),
+				getParameter(request, INPUT)));
 		//
 		Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
 		//
@@ -842,7 +911,7 @@ public class MainServlet extends HttpServlet {
 			//
 			put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
 			//
-		} else if (Boolean.logicalAnd(input == null,
+		} else if (Boolean.logicalAnd(input == null || input.length == 0,
 				and(file, MainServlet::exists, MainServlet::isFile, MainServlet::canRead))) {
 			//
 			input = FileUtils.readFileToByteArray(file);
@@ -1044,8 +1113,6 @@ public class MainServlet extends HttpServlet {
 			//
 			putAll(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), getFormFieldMap(fileItems));
 			//
-			String fileName = null;
-			//
 			final Collection<FileItem> collection = getNotFormFields(fileItems);
 			//
 			final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
@@ -1076,7 +1143,10 @@ public class MainServlet extends HttpServlet {
 				//
 				put(map, "file", file);
 				//
-				put(map, "fileName", fileName);
+				final FileItem fileItem = testAndApply(x -> IterableUtils.size(x) == 1, collection,
+						x -> IterableUtils.get(x, 0), null);
+				//
+				put(map, "fileName", getName(fileItem));
 				//
 			} // if
 				//
@@ -1084,6 +1154,10 @@ public class MainServlet extends HttpServlet {
 			//
 		return map;
 		//
+	}
+
+	private static String getName(final FileItem instance) {
+		return instance != null ? instance.getName() : null;
 	}
 
 	private static Collection<FileItem> getNotFormFields(final Iterable<FileItem> fileItems) {
@@ -1157,7 +1231,7 @@ public class MainServlet extends HttpServlet {
 
 	private static void write(final OutputStream instance, final byte[] b) throws IOException {
 		//
-		if (instance == null) {
+		if (instance == null || b == null) {
 			//
 			return;
 			//

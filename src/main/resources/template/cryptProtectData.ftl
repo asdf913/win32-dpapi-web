@@ -53,7 +53,7 @@
 		</#if>
 		<fieldset style="width:1px">
 			<legend><#if request?? && request.servletPath?? && request.servletPath?is_string>${request.servletPath[1..]}</#if></legend>
-			<form method="post" enctype="multipart/form-data" action=""<#if request??>${request.scheme!""}</#if>://<#if request?? && request.serverName??>${request.serverName}</#if>:<#if request??>${request.serverPort?c}</#if><#if request?? && request.servletPath??>${request.servletPath}</#if>"">
+			<form method="post" enctype="multipart/form-data" action=""<#if request??>${request.scheme!""}</#if>://<#if request?? && request.serverName??>${request.serverName}</#if>:<#if request??>${request.serverPort?c}</#if><#if request?? && request.servletPath??>${request.servletPath}</#if>">
 				<table>
 					<tbody>
 						<tr><td>Input</td><td><input name="input" value="<#if input??>${input}<#elseif request??>${request.getParameter("input")!""}</#if>" style="field-sizing:content;resize:none;width:90vw;box-sizing:border-box"/></td></tr>

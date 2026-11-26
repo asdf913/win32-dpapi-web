@@ -344,7 +344,7 @@ class MainServletTest {
 					//
 					return isFormField;
 					//
-				} else if (contains(Arrays.asList("getFieldName", "getString"), name)) {
+				} else if (contains(Arrays.asList("getFieldName", "getString", "getName"), name)) {
 					//
 					return null;
 					//
