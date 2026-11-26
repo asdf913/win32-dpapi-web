@@ -58,6 +58,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.stream.Streams.FailableStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -69,6 +70,7 @@ import org.testng.annotations.Test;
 
 import com.google.common.base.Predicates;
 import com.google.common.reflect.Reflection;
+import com.sun.jna.LastErrorException;
 import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinNT;
 
@@ -81,7 +83,7 @@ class MainServletTest {
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
 			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
 			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
-			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS = null;
+			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -149,6 +151,8 @@ class MainServletTest {
 		(METHOD_GET_FORM_FIELD_MAP = clz.getDeclaredMethod("getFormFieldMap", Iterable.class)).setAccessible(true);
 		//
 		(METHOD_GET_NOT_FORM_FIELDS = clz.getDeclaredMethod("getNotFormFields", Iterable.class)).setAccessible(true);
+		//
+		(METHOD_MAP_ENTRY = clz.getDeclaredMethod("mapEntry", Entry.class)).setAccessible(true);
 		//
 	}
 
@@ -738,8 +742,11 @@ class MainServletTest {
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "getDeclaredFields"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))
-					|| Boolean.logicalAnd(Objects.equals(name, "process"), Arrays.equals(parameterTypes,
-							new Class<?>[] { Win32Exception.class, Integer.TYPE, Integer.TYPE }))) {
+					|| Boolean.logicalAnd(Objects.equals(name, "process"),
+							Arrays.equals(parameterTypes,
+									new Class<?>[] { Win32Exception.class, Integer.TYPE, Integer.TYPE }))
+					|| Boolean.logicalAnd(Objects.equals(name, "mapEntry"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Entry.class }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -1256,6 +1263,23 @@ class MainServletTest {
 		} // if
 			//
 		Assert.assertNotNull(invoke(METHOD_GET_NOT_FORM_FIELDS, null, iterable));
+		//
+	}
+
+	@Test
+	void testMapEntry() throws Throwable {
+		//
+		final Map<Object, Object> map = new LinkedHashMap<>(Collections.singletonMap("errorCode", Integer.valueOf(0)));
+		//
+		put(map, "message", null);
+		//
+		Assert.assertEquals(
+				invoke(METHOD_MAP_ENTRY, null, Pair.of("", Narcissus.allocateInstance(Win32Exception.class))),
+				Pair.of("", map));
+		//
+		Assert.assertEquals(
+				invoke(METHOD_MAP_ENTRY, null, Pair.of("", Narcissus.allocateInstance(LastErrorException.class))),
+				Pair.of("", map));
 		//
 	}
 

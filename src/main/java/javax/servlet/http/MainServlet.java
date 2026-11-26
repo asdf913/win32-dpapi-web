@@ -957,54 +957,17 @@ public class MainServlet extends HttpServlet {
 					if (Objects.equals(Boolean.TRUE, Boolean.valueOf(getParameter(request, "json")))) {
 						//
 						write(writer,
-								new ObjectMapper()
-										.writeValueAsString(collect(map(filter(stream(entrySet(map)),
+								new ObjectMapper().writeValueAsString(collect(
+										map(filter(stream(entrySet(map)),
 												x -> Boolean.logicalAnd(
 														!Boolean.logicalOr(
 																isAssignableFrom(ServletRequest.class,
 																		getClass(getValue(x))),
 																Objects.equals(getClass(getValue(x)), String[].class)),
 														getValue(x) != null)),
-												x -> {
-													//
-													final Object key = getKey(x);
-													//
-													final Object value = getValue(x);
-													//
-													final Win32Exception win32Exception = cast(Win32Exception.class,
-															value);
-													//
-													if (win32Exception != null) {
-														//
-														final Map<String, Object> m = new LinkedHashMap<>(
-																Collections.singletonMap("errorCode",
-																		win32Exception.getErrorCode()));
-														//
-														put(m, "message", win32Exception.getMessage());
-														//
-														return Pair.of(key, m);
-														//
-													} // if
-														//
-													final LastErrorException lastErrorException = cast(
-															LastErrorException.class, value);
-													//
-													if (lastErrorException != null) {
-														//
-														final Map<String, Object> m = new LinkedHashMap<>(
-																Collections.singletonMap("errorCode",
-																		lastErrorException.getErrorCode()));
-														//
-														put(m, "message", lastErrorException.getMessage());
-														//
-														return Pair.of(key, m);
-														//
-													} // if
-														//
-													return x;
-													//
-												}), LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
-												MainServlet::putAll)));
+												MainServlet::mapEntry),
+										LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
+										MainServlet::putAll)));
 						//
 						return;
 						//
@@ -1022,6 +985,42 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static <K> Entry<K, Object> mapEntry(final Entry<K, Object> entry) {
+		//
+		final K key = getKey(entry);
+		//
+		final Object value = getValue(entry);
+		//
+		final Win32Exception win32Exception = cast(Win32Exception.class, value);
+		//
+		if (win32Exception != null) {
+			//
+			final Map<String, Object> m = new LinkedHashMap<>(
+					Collections.singletonMap("errorCode", win32Exception.getErrorCode()));
+			//
+			put(m, "message", win32Exception.getMessage());
+			//
+			return Pair.of(key, m);
+			//
+		} // if
+			//
+		final LastErrorException lastErrorException = cast(LastErrorException.class, value);
+		//
+		if (lastErrorException != null) {
+			//
+			final Map<String, Object> m = new LinkedHashMap<>(
+					Collections.singletonMap("errorCode", lastErrorException.getErrorCode()));
+			//
+			put(m, "message", lastErrorException.getMessage());
+			//
+			return Pair.of(key, m);
+			//
+		} // if
+			//
+		return entry;
+		//
 	}
 
 	private static <T> boolean and(final T value, final Predicate<T> a, final Predicate<T> b, final Predicate<T> c) {
