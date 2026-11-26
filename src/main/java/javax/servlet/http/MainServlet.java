@@ -800,7 +800,7 @@ public class MainServlet extends HttpServlet {
 					//
 				put(map, THROWABLE, throwable);
 				//
-				if (file != null && throwable == null) {
+				if (Boolean.logicalAnd(file != null, throwable == null)) {
 					//
 					setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
 							MapUtils.getObject(cryptProtectData, "fileName"), "cryptUnprotectData"));
