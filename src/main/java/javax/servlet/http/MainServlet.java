@@ -824,24 +824,8 @@ public class MainServlet extends HttpServlet {
 								ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "json")),
 										getParameter(request, "json"))));
 				//
-				if (throwable != null) {
+				if (handleThrowable(throwable, response, json, configuration, servletPath, map)) {
 					//
-					try (final Writer writer = getWriter(response)) {
-						//
-						if (json) {
-							//
-							write(writer, new ObjectMapper().writeValueAsString(
-									Collections.singletonMap("errorMessage", getMessage(throwable))));
-							//
-						} else {
-							//
-							process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map,
-									writer);
-							//
-						} // if
-							//
-					} // try
-						//
 					return;
 					//
 				} // if
@@ -985,6 +969,44 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static boolean handleThrowable(final Throwable throwable, final ServletResponse response,
+			final boolean json, final Configuration configuration, final String servletPath, final Map<?, ?> map)
+			throws IOException, TemplateException {
+		//
+		if (throwable != null) {
+			//
+			try (final Writer writer = getWriter(response)) {
+				//
+				if (json) {
+					//
+					write(writer, new ObjectMapper()
+							.writeValueAsString(Collections.singletonMap("errorMessage", getMessage(throwable))));
+					//
+				} else {
+					//
+					final Field field = testAndApply(x -> IterableUtils.size(x) == 1, collect(
+							filter(stream(testAndApply(Objects::nonNull, getClass(servletPath),
+									FieldUtils::getAllFieldsList, null)), x -> Objects.equals(getName(x), VALUE)),
+							Collectors.toList()), x -> IterableUtils.get(x, 0), null);
+					//
+					process(getTemplate(configuration,
+							(field == null || Narcissus.getField(servletPath, field) != null
+									? StringUtils.substring(servletPath, 1)
+									: null) + ".ftl"),
+							map, writer);
+					//
+				} // if
+					//
+			} // try
+				//
+			return true;
+			//
+		} // if
+			//
+		return false;
+		//
 	}
 
 	private static <K> Entry<K, Object> mapEntry(final Entry<K, Object> entry) {

@@ -74,6 +74,7 @@ import com.sun.jna.LastErrorException;
 import com.sun.jna.platform.win32.Win32Exception;
 import com.sun.jna.platform.win32.WinNT;
 
+import freemarker.template.Configuration;
 import io.github.toolfactory.narcissus.Narcissus;
 
 class MainServletTest {
@@ -83,7 +84,8 @@ class MainServletTest {
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
 			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
 			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
-			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY = null;
+			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY,
+			METHOD_HANDLE_THROWABLE = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -153,6 +155,9 @@ class MainServletTest {
 		(METHOD_GET_NOT_FORM_FIELDS = clz.getDeclaredMethod("getNotFormFields", Iterable.class)).setAccessible(true);
 		//
 		(METHOD_MAP_ENTRY = clz.getDeclaredMethod("mapEntry", Entry.class)).setAccessible(true);
+		//
+		(METHOD_HANDLE_THROWABLE = clz.getDeclaredMethod("handleThrowable", Throwable.class, ServletResponse.class,
+				Boolean.TYPE, Configuration.class, String.class, Map.class)).setAccessible(true);
 		//
 	}
 
@@ -1280,6 +1285,21 @@ class MainServletTest {
 		Assert.assertEquals(
 				invoke(METHOD_MAP_ENTRY, null, Pair.of("", Narcissus.allocateInstance(LastErrorException.class))),
 				Pair.of("", map));
+		//
+	}
+
+	@Test
+	void testHandleThrowable() throws IllegalAccessException, InvocationTargetException {
+		//
+		final Object throwable = Narcissus.allocateInstance(Throwable.class);
+		//
+		Assert.assertEquals(invoke(METHOD_HANDLE_THROWABLE, null, throwable, null, false, null, null, null),
+				Boolean.TRUE);
+		//
+		Assert.assertEquals(invoke(METHOD_HANDLE_THROWABLE, null, throwable, null, false, null, "", null),
+				Boolean.TRUE);
+		//
+		Assert.assertEquals(invoke(METHOD_HANDLE_THROWABLE, null, throwable, null, true, null, "", null), Boolean.TRUE);
 		//
 	}
 
