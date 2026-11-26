@@ -37,6 +37,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 
 public class Main {
 
+	private static final String VALUE = "value";
+	
 	private static class MethodVisitorImpl extends MethodVisitor {
 
 		private Object value = null;
@@ -146,7 +148,7 @@ public class Main {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(name), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+						f -> Objects.equals(getName(f), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(name, field) != null ? clz.getResourceAsStream(name) : null;
@@ -164,7 +166,7 @@ public class Main {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+						f -> Objects.equals(getName(f), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		return field == null || Narcissus.getField(instance, field) != null ? instance.replace(oldChar, newChar) : null;
@@ -218,7 +220,7 @@ public class Main {
 		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
 				collect(filter(
 						stream(testAndApply(Objects::nonNull, getClass(string), FieldUtils::getAllFieldsList, null)),
-						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+						f -> Objects.equals(getName(f), VALUE)), Collectors.toList()),
 				x -> IterableUtils.get(x, 0), null);
 		//
 		if (string != null && field != null && Narcissus.getField(string, field) == null) {
