@@ -1,19 +1,16 @@
 package org.eclipse.jetty.server;
 
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,15 +22,54 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import io.github.toolfactory.narcissus.Narcissus;
 
 public class Main {
+
+	private static class MethodVisitorImpl extends MethodVisitor {
+
+		private Object value = null;
+
+		private Collection<Object> values = null;
+
+		private MethodVisitorImpl() {
+			//
+			super(Opcodes.ASM9);
+			//
+		}
+
+		@Override
+		public void visitLdcInsn(final Object value) {
+			this.value = value;
+		}
+
+		@Override
+		public void visitMethodInsn(final int opcode, final String owner, final String name, final String descriptor,
+				final boolean isInterface) {
+			//
+			if (Objects.equals("getAttribute", name)
+					&& Objects.equals(descriptor,
+							"(Ljavax/servlet/ServletContext;Ljava/lang/String;)Ljava/lang/Object;")
+					&& (values = ObjectUtils.getIfNull(values, ArrayList::new)) != null && !values.contains(value)) {
+				//
+				values.add(value);
+				//
+			} // if
+				//
+		}
+
+	}
 
 	public static void main(final String[] args) throws Exception {
 		//
@@ -41,15 +77,47 @@ public class Main {
 		//
 		servletContextHandler.setContextPath("/");
 		//
-		final ServletHolder servletHolder = new ServletHolder(new MainServlet());
+		final Class<?> clz = MainServlet.class;
 		//
 		final Map<String, String> map = toMap(args);
 		//
-		servletHolder.setInitParameters(collect(
-				filter(testAndApply(Objects::nonNull, MainServlet.class.getDeclaredFields(), Arrays::stream, null),
-						f -> f != null && !Modifier.isStatic(f.getModifiers())
-								&& Number.class.isAssignableFrom(f.getType())),
-				LinkedHashMap::new, (a, b) -> put(a, getName(b), MapUtils.getObject(map, getName(b))), Main::putAll));
+		try (final InputStream is = getResourceAsStream(clz,
+				StringUtils.join("/", replace(getName(clz), '.', '/'), ".class"))) {
+			//
+			final ClassReader cr = testAndApply(Objects::nonNull, is, ClassReader::new, null);
+			//
+			if (cr != null) {
+				//
+				final MethodVisitorImpl mvi = new MethodVisitorImpl();
+				//
+				cr.accept(new ClassVisitor(Opcodes.ASM9) {
+
+					@Override
+					public MethodVisitor visitMethod(final int access, final String name, final String descriptor,
+							final String signature, final String[] exceptions) {
+						//
+						return mvi;
+						//
+					}
+
+				}, 0);
+				//
+				final Iterable<Object> iterable = mvi.values;
+				//
+				String string = null;
+				//
+				for (int i = 0; i < IterableUtils.size(iterable); i++) {
+					//
+					servletContextHandler.setAttribute(string = Objects.toString(IterableUtils.get(iterable, i)),
+							MapUtils.getObject(map, string));
+					//
+				} // for
+					//
+			} // if
+				//
+		} // try
+			//
+		final ServletHolder servletHolder = new ServletHolder(new MainServlet());
 		//
 		servletContextHandler.addServlet(servletHolder, "/");
 		//
@@ -65,6 +133,46 @@ public class Main {
 			//
 		} // if
 			//
+	}
+
+	private static InputStream getResourceAsStream(final Class<?> clz, final String name) {
+		//
+		if (clz == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(name), FieldUtils::getAllFieldsList, null)),
+						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(name, field) != null ? clz.getResourceAsStream(name) : null;
+		//
+	}
+
+	private static String replace(final String instance, final char oldChar, final char newChar) {
+		//
+		if (instance == null) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Field field = testAndApply(x -> IterableUtils.size(x) == 1,
+				collect(filter(
+						stream(testAndApply(Objects::nonNull, getClass(instance), FieldUtils::getAllFieldsList, null)),
+						f -> Objects.equals(getName(f), "value")), Collectors.toList()),
+				x -> IterableUtils.get(x, 0), null);
+		//
+		return field == null || Narcissus.getField(instance, field) != null ? instance.replace(oldChar, newChar) : null;
+		//
+	}
+
+	private static String getName(final Class<?> instance) {
+		return instance != null ? instance.getName() : null;
 	}
 
 	private static boolean isTestMode() {
@@ -156,11 +264,6 @@ public class Main {
 				: null;
 	}
 
-	private static <T, R> R collect(final Stream<T> instance, final Supplier<R> supplier,
-			final BiConsumer<R, ? super T> accumulator, final BiConsumer<R, R> combiner) {
-		return instance != null ? instance.collect(supplier, accumulator, combiner) : null;
-	}
-
 	private static <T> Stream<T> filter(final Stream<T> instance, final Predicate<? super T> predicate) {
 		return instance != null ? instance.filter(predicate) : instance;
 	}
@@ -169,8 +272,8 @@ public class Main {
 		return instance != null ? instance.stream() : null;
 	}
 
-	private static <T, R> R testAndApply(final Predicate<T> predicate, final T value, final Function<T, R> functionTrue,
-			final Function<T, R> functionFalse) {
+	private static <T, R, E extends Throwable> R testAndApply(final Predicate<T> predicate, final T value,
+			final FailableFunction<T, R, E> functionTrue, final FailableFunction<T, R, E> functionFalse) throws E {
 		return test(predicate, value) ? apply(functionTrue, value) : apply(functionFalse, value);
 	}
 
@@ -178,7 +281,8 @@ public class Main {
 		return instance != null && instance.test(value);
 	}
 
-	private static <T, R> R apply(final Function<T, R> instance, final T value) {
+	private static <T, R, E extends Throwable> R apply(final FailableFunction<T, R, E> instance, final T value)
+			throws E {
 		return instance != null ? instance.apply(value) : null;
 	}
 
@@ -189,12 +293,6 @@ public class Main {
 	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) {
 		if (instance != null) {
 			instance.put(key, value);
-		}
-	}
-
-	private static <K, V> void putAll(final Map<K, V> a, final Map<? extends K, ? extends V> b) {
-		if (a != null && b != null) {
-			a.putAll(b);
 		}
 	}
 

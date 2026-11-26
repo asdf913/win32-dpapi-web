@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -23,6 +22,7 @@ import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
@@ -35,8 +35,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 
 class MainTest {
 
-	private static Method METHOD_TO_MAP, METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_COLLECT, METHOD_TEST, METHOD_LENGTH,
-			METHOD_PUT_ALL = null;
+	private static Method METHOD_TO_MAP, METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_COLLECT, METHOD_TEST,
+			METHOD_LENGTH = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -54,8 +54,6 @@ class MainTest {
 		(METHOD_TEST = clz.getDeclaredMethod("test", Predicate.class, Object.class)).setAccessible(true);
 		//
 		(METHOD_LENGTH = clz.getDeclaredMethod("length", Object[].class)).setAccessible(true);
-		//
-		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
 		//
 	}
 
@@ -92,7 +90,7 @@ class MainTest {
 				//
 				return test;
 				//
-			} else if (proxy instanceof Function && Objects.equals(name, "apply")) {
+			} else if (proxy instanceof FailableFunction && Objects.equals(name, "apply")) {
 				//
 				return null;
 				//
@@ -180,6 +178,10 @@ class MainTest {
 				if ((parameterType = ArrayUtils.get(parameterTypes, j)) != null && parameterType.isArray()) {
 					//
 					add(collection, Array.newInstance(parameterType.getComponentType(), j));
+					//
+				} else if (Objects.equals(parameterType, Character.TYPE)) {
+					//
+					add(collection, Character.valueOf(' '));
 					//
 				} else {
 					//
@@ -269,6 +271,14 @@ class MainTest {
 						//
 					add(collection, Reflection.newProxy(parameterType, ih));
 					//
+				} else if (Objects.equals(parameterType, Class.class)) {
+					//
+					add(collection, Class.class);
+					//
+				} else if (Objects.equals(parameterType, Character.TYPE)) {
+					//
+					add(collection, Character.valueOf(' '));
+					//
 				} else {
 					//
 					add(collection, Narcissus.allocateInstance(parameterType));
@@ -285,7 +295,9 @@ class MainTest {
 					|| Boolean.logicalAnd(Objects.equals(name = getName(m), "getClass"),
 							Arrays.equals(parameterTypes, new Class<?>[] { Object.class }))
 					|| Boolean.logicalAnd(Objects.equals(name, "filter"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class, Predicate.class }))) {
+							Arrays.equals(parameterTypes, new Class<?>[] { Stream.class, Predicate.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "getName"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Class.class }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -414,14 +426,6 @@ class MainTest {
 	void testLength() throws IllegalAccessException, InvocationTargetException {
 		//
 		Assert.assertEquals(invoke(METHOD_LENGTH, null, (Object) null), Integer.valueOf(0));
-		//
-	}
-
-	@Test
-	void testPutAll() throws IllegalAccessException, InvocationTargetException {
-		//
-		Assert.assertNull(
-				invoke(METHOD_PUT_ALL, null, Reflection.newProxy(Map.class, ObjectUtils.getIfNull(ih, IH::new)), null));
 		//
 	}
 

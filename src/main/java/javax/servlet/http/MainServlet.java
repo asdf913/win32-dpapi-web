@@ -47,6 +47,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
@@ -262,11 +263,6 @@ public class MainServlet extends HttpServlet {
 
 	private Configuration configuration = null;
 
-	@Note("Primary language identifier")
-	private Integer primaryLanguage = null;
-
-	private Integer subLanguage = null;
-
 	@Override
 	public void init(final ServletConfig servletConfig) throws ServletException {
 		//
@@ -276,58 +272,6 @@ public class MainServlet extends HttpServlet {
 				getContextClassLoader(Thread.currentThread()), "template");
 		//
 		setDefaultEncoding(configuration, "UTF-8");
-		//
-		forEach(filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
-				f -> Boolean.logicalAnd(!isStatic(f), Number.class.isAssignableFrom(getType(f)))), f -> {
-					//
-					final String name = getName(f);
-					//
-					final String initParameter = getInitParameter(servletConfig, name);
-					//
-					if (Objects.equals(getType(f), Integer.class)) {
-						//
-						Integer integer = valueOf(initParameter);
-						//
-						if (integer == null) {
-							//
-							final List<Field> fs = collect(
-									filter(testAndApply(Objects::nonNull, getDeclaredFields(WinNT.class),
-											Arrays::stream, null), x -> Objects.equals(getName(x), initParameter)),
-									Collectors.toList());
-							//
-							final int size = IterableUtils.size(fs);
-							//
-							if (size == 1) {
-								//
-								final Field f1 = IterableUtils.get(fs, 0);
-								//
-								if (f1 == null || !Objects.equals(getType(f1), Integer.TYPE) || !isStatic(f1)) {
-									//
-									throw new RuntimeException();
-									//
-								} // if
-									//
-								integer = Integer.valueOf(Narcissus.getStaticIntField(f1));
-								//
-							} // if
-								//
-							testAndRun(size > 1, () -> {
-								//
-								throw new RuntimeException();
-								//
-							});
-							//
-						} // if
-							//
-						Narcissus.setField(this, f, integer);
-						//
-						return;
-						//
-					} // if
-						//
-					throw new RuntimeException(Objects.toString(f));
-					//
-				});
 		//
 		final Collection<Field> fs = collect(
 				filter(testAndApply(Objects::nonNull, getDeclaredFields(getClass()), Arrays::stream, null),
@@ -353,12 +297,6 @@ public class MainServlet extends HttpServlet {
 	private static void info(final Logger instance, final String format, final Object... arguments) {
 		if (instance != null) {
 			instance.info(format, arguments);
-		}
-	}
-
-	private static void testAndRun(final boolean condition, final Runnable runnable) {
-		if (condition && runnable != null) {
-			runnable.run();
 		}
 	}
 
@@ -441,10 +379,6 @@ public class MainServlet extends HttpServlet {
 		if (instance != null) {
 			instance.forEach(action);
 		}
-	}
-
-	private static String getInitParameter(final ServletConfig instance, final String name) {
-		return instance != null ? instance.getInitParameter(name) : null;
 	}
 
 	private static Field[] getDeclaredFields(final Class<?> instance) {
@@ -808,8 +742,13 @@ public class MainServlet extends HttpServlet {
 					//
 				} catch (final Win32Exception e) {
 					//
-					throwable = process(e, intValue(primaryLanguage, WinNT.LANG_ENGLISH),
-							intValue(subLanguage, WinNT.SUBLANG_ENGLISH_US));
+					final ServletContext servletContext = getServletContext(request);
+					//
+					throwable = process(e,
+							intValue(valueOf(Objects.toString(getAttribute(servletContext, "primaryLanguage"))),
+									WinNT.LANG_ENGLISH),
+							intValue(valueOf(Objects.toString(getAttribute(servletContext, "subLanguage"))),
+									WinNT.SUBLANG_ENGLISH_US));
 					//
 				} catch (final Exception e) {
 					//
@@ -852,6 +791,14 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
+	}
+
+	private static ServletContext getServletContext(final ServletRequest instance) {
+		return instance != null ? instance.getServletContext() : null;
+	}
+
+	private static Object getAttribute(final ServletContext instance, final String name) {
+		return instance != null ? instance.getAttribute(name) : null;
 	}
 
 	private static void cryptProtectData(final HttpServletRequest request, final HttpServletResponse response,

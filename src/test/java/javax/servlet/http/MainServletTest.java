@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import javax.servlet.ReadListener;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
@@ -82,10 +83,9 @@ class MainServletTest {
 	private static Method METHOD_GET_NAME, METHOD_GET_CLASS, METHOD_CONTAINS, METHOD_COLLECT, METHOD_TEST,
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
-			METHOD_TEST_AND_RUN, METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ,
-			METHOD_GET_VALUE_BY_CLASS, METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
-			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY,
-			METHOD_HANDLE_THROWABLE = null;
+			METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS,
+			METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY, METHOD_AND,
+			METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY, METHOD_HANDLE_THROWABLE = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -122,8 +122,6 @@ class MainServletTest {
 		(METHOD_GET_TYPE = clz.getDeclaredMethod("getType", Field.class)).setAccessible(true);
 		//
 		(METHOD_GET_DECLARED_FIELDS = clz.getDeclaredMethod("getDeclaredFields", Class.class)).setAccessible(true);
-		//
-		(METHOD_TEST_AND_RUN = clz.getDeclaredMethod("testAndRun", Boolean.TYPE, Runnable.class)).setAccessible(true);
 		//
 		(METHOD_PUT_ALL = clz.getDeclaredMethod("putAll", Map.class, Map.class)).setAccessible(true);
 		//
@@ -192,7 +190,8 @@ class MainServletTest {
 				//
 			} else if (proxy instanceof ServletRequest) {
 				//
-				if (contains(Arrays.asList("getScheme", "getServerName", "getHeader", "getCharacterEncoding"), name)) {
+				if (contains(Arrays.asList("getScheme", "getServerName", "getHeader", "getCharacterEncoding",
+						"getServletContext"), name)) {
 					//
 					return null;
 					//
@@ -351,6 +350,10 @@ class MainServletTest {
 					//
 				} // if
 					//
+			} else if (proxy instanceof ServletContext && Objects.equals(name, "getAttribute")) {
+				//
+				return null;
+				//
 			} // if
 				//
 			throw new Throwable(name);
@@ -1064,16 +1067,6 @@ class MainServletTest {
 		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT3, null, predicate, null, null));
 		//
 		Assert.assertNull(invoke(METHOD_TEST_AND_ACCEPT4, null, biPredicate, null, null, null));
-		//
-	}
-
-	@Test
-	void testTestAndRun() throws IllegalAccessException, InvocationTargetException {
-		//
-		Assert.assertNull(invoke(METHOD_TEST_AND_RUN, null, Boolean.TRUE, null));
-		//
-		Assert.assertNull(invoke(METHOD_TEST_AND_RUN, null, Boolean.TRUE,
-				Reflection.newProxy(Runnable.class, ObjectUtils.getIfNull(ih, IH::new))));
 		//
 	}
 
