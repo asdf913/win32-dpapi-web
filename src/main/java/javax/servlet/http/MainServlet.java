@@ -770,125 +770,8 @@ public class MainServlet extends HttpServlet {
 			//
 			try {
 				//
-				final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+				cryptProtectData(request, response, configuration);
 				//
-				final Map<String, Class<?>> encodingMap = getEncodingMap(getContextClassLoader(Thread.currentThread()));
-				//
-				final String[] encodings = toArray(keySet(encodingMap), new String[] {});
-				//
-				Arrays.sort(encodings, MainServlet::compare);
-				//
-				put(map, ENCODINGS, encodings);
-				//
-				final List<Method> ms = collect(filter(
-						testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream, null),
-						m -> Boolean.logicalAnd(Objects.equals(getName(m), "secure"), getParameterCount(m) == 0)),
-						Collectors.toList());
-				//
-				final RandomUtils randomUtils = cast(RandomUtils.class,
-						testAndApply(MainServlet::isStatic,
-								testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
-								Narcissus::invokeStaticMethod, null));
-				//
-				final Map<String, Object> cryptProtectData = cryptProtectData(request);
-				//
-				final String encoding = ObjectUtils.getIfNull(
-						Objects.toString(MapUtils.getObject(cryptProtectData, ENCODING)),
-						getParameter(request, ENCODING));
-				//
-				put(map, ENCODING, encoding);
-				//
-				byte[] input = getBytes(getParameter(request, INPUT));
-				//
-				Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
-				//
-				final File file = getValueByClass(cryptProtectData, File.class);
-				//
-				if (Boolean.logicalAnd(
-						StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
-						file != null)) {
-					//
-					put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
-					//
-				} else if (Boolean.logicalAnd(input == null,
-						and(file, MainServlet::exists, MainServlet::isFile, MainServlet::canRead))) {
-					//
-					input = FileUtils.readFileToByteArray(file);
-					//
-				} // if
-					//
-				forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
-				//
-				final boolean json = Objects.equals(Boolean.TRUE,
-						Boolean.valueOf(
-								ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "json")),
-										getParameter(request, "json"))));
-				//
-				if (handleThrowable(throwable, response, json, configuration, servletPath, map)) {
-					//
-					return;
-					//
-				} // if
-					//
-				final byte[] output = cryptProtectData(input,
-						valueOf(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, FLAGS)),
-								getParameter(request, FLAGS))),
-						getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENTROPY)),
-								getParameter(request, ENTROPY))),
-						ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "description")),
-								getParameter(request, "description")),
-						() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100)));
-				//
-				if (file != null) {
-					//
-					setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
-							MapUtils.getObject(cryptProtectData, "fileName"), "cryptProtectData"));
-					//
-					try (final OutputStream os = getOutputStream(response)) {
-						//
-						write(os, output);
-						//
-					} finally {
-						//
-						FileUtils.deleteQuietly(file);
-						//
-					} // try
-						//
-					return;
-					//
-				} // if
-					//
-				put(map, OUTPUT,
-						testAndApply(Objects::nonNull,
-								testAndApply(Objects::nonNull, output,
-										x -> encode(cast(BinaryEncoder.class,
-												newInstance(MapUtils.getObject(encodingMap, encoding))), x),
-										null),
-								String::new, null));
-				//
-				try (final Writer writer = getWriter(response)) {
-					//
-					if (json) {
-						//
-						write(writer,
-								new ObjectMapper()
-										.writeValueAsString(collect(
-												filter(stream(entrySet(map)),
-														x -> Boolean.logicalAnd(
-																contains(Arrays.asList(String.class),
-																		getClass(getValue(x))),
-																contains(Arrays.asList(OUTPUT, ENCODING), getKey(x)))),
-												Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
-						//
-					} else {
-						//
-						process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map,
-								writer);
-						//
-					} // if
-						//
-				} // try
-					//
 			} catch (final Exception e) {
 				//
 				throw new ServletException(getMessage(e), e);
@@ -968,6 +851,121 @@ public class MainServlet extends HttpServlet {
 			} // try
 				//
 		} // if
+			//
+	}
+
+	private static void cryptProtectData(final HttpServletRequest request, final HttpServletResponse response,
+			final Configuration configuration) throws Exception {
+		//
+		final Map<String, Object> map = new LinkedHashMap<>(Collections.singletonMap(REQUEST, request));
+		//
+		final Map<String, Class<?>> encodingMap = getEncodingMap(getContextClassLoader(Thread.currentThread()));
+		//
+		final String[] encodings = toArray(keySet(encodingMap), new String[] {});
+		//
+		Arrays.sort(encodings, MainServlet::compare);
+		//
+		put(map, ENCODINGS, encodings);
+		//
+		final List<Method> ms = collect(
+				filter(testAndApply(Objects::nonNull, RandomUtils.class.getDeclaredMethods(), Arrays::stream, null),
+						m -> Boolean.logicalAnd(Objects.equals(getName(m), "secure"), getParameterCount(m) == 0)),
+				Collectors.toList());
+		//
+		final RandomUtils randomUtils = cast(RandomUtils.class,
+				testAndApply(MainServlet::isStatic,
+						testAndApply(x -> IterableUtils.size(x) == 1, ms, x -> IterableUtils.get(x, 0), null),
+						Narcissus::invokeStaticMethod, null));
+		//
+		final Map<String, Object> cryptProtectData = cryptProtectData(request);
+		//
+		final String encoding = ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENCODING)),
+				getParameter(request, ENCODING));
+		//
+		put(map, ENCODING, encoding);
+		//
+		byte[] input = getBytes(getParameter(request, INPUT));
+		//
+		Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
+		//
+		final File file = getValueByClass(cryptProtectData, File.class);
+		//
+		if (Boolean.logicalAnd(StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
+				file != null)) {
+			//
+			put(map, THROWABLE, throwable = new RuntimeException("Please pass input or file"));
+			//
+		} else if (Boolean.logicalAnd(input == null,
+				and(file, MainServlet::exists, MainServlet::isFile, MainServlet::canRead))) {
+			//
+			input = FileUtils.readFileToByteArray(file);
+			//
+		} // if
+			//
+		forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
+		//
+		final boolean json = Objects.equals(Boolean.TRUE,
+				Boolean.valueOf(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "json")),
+						getParameter(request, "json"))));
+		//
+		final String servletPath = getServletPath(request);
+		//
+		if (handleThrowable(throwable, response, json, configuration, servletPath, map)) {
+			//
+			return;
+			//
+		} // if
+			//
+		final byte[] output = cryptProtectData(input,
+				valueOf(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, FLAGS)),
+						getParameter(request, FLAGS))),
+				getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENTROPY)),
+						getParameter(request, ENTROPY))),
+				ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, "description")),
+						getParameter(request, "description")),
+				() -> randomBytes(randomUtils, randomInt(randomUtils, 1, 100)));
+		//
+		if (file != null) {
+			//
+			setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
+					MapUtils.getObject(cryptProtectData, "fileName"), "cryptProtectData"));
+			//
+			try (final OutputStream os = getOutputStream(response)) {
+				//
+				write(os, output);
+				//
+			} finally {
+				//
+				FileUtils.deleteQuietly(file);
+				//
+			} // try
+				//
+			return;
+			//
+		} // if
+			//
+		put(map, OUTPUT, testAndApply(Objects::nonNull, testAndApply(Objects::nonNull, output,
+				x -> encode(cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))), x),
+				null), String::new, null));
+		//
+		try (final Writer writer = getWriter(response)) {
+			//
+			if (json) {
+				//
+				write(writer, new ObjectMapper().writeValueAsString(collect(
+						filter(stream(entrySet(map)),
+								x -> Boolean.logicalAnd(contains(Arrays.asList(String.class), getClass(getValue(x))),
+										contains(Arrays.asList(OUTPUT, ENCODING), getKey(x)))),
+						Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
+				//
+			} else {
+				//
+				process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
+				//
+			} // if
+				//
+		} // try
+			//
 			//
 	}
 
