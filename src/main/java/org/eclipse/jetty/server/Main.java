@@ -62,10 +62,6 @@ public class Main {
 			//
 	}
 
-	private static String getName(final Class<?> instance) {
-		return instance != null ? instance.getName() : null;
-	}
-
 	private static boolean isTestMode() {
 		try {
 			return Class.forName("org.testng.annotations.Test") != null;
