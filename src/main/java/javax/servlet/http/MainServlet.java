@@ -121,6 +121,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String THROWABLE = "throwable";
 
+	private static final String FILE_NAME = "fileName";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -803,7 +805,7 @@ public class MainServlet extends HttpServlet {
 				if (Boolean.logicalAnd(file != null, throwable == null)) {
 					//
 					setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
-							MapUtils.getObject(cryptProtectData, "fileName"), "cryptUnprotectData"));
+							MapUtils.getObject(cryptProtectData, FILE_NAME), "cryptUnprotectData"));
 					//
 					try (final OutputStream os = getOutputStream(response)) {
 						//
@@ -858,7 +860,6 @@ public class MainServlet extends HttpServlet {
 				//
 		} // if
 			//
-
 	}
 
 	private static ServletContext getServletContext(final ServletRequest instance) {
@@ -944,7 +945,7 @@ public class MainServlet extends HttpServlet {
 		if (file != null) {
 			//
 			setHeader(response, "Content-Disposition", String.format("attachment; filename=\"%1$s.%2$s\"",
-					MapUtils.getObject(cryptProtectData, "fileName"), "cryptProtectData"));
+					MapUtils.getObject(cryptProtectData, FILE_NAME), "cryptProtectData"));
 			//
 			try (final OutputStream os = getOutputStream(response)) {
 				//
@@ -1146,7 +1147,7 @@ public class MainServlet extends HttpServlet {
 				final FileItem fileItem = testAndApply(x -> IterableUtils.size(x) == 1, collection,
 						x -> IterableUtils.get(x, 0), null);
 				//
-				put(map, "fileName", getName(fileItem));
+				put(map, FILE_NAME, getName(fileItem));
 				//
 			} // if
 				//
