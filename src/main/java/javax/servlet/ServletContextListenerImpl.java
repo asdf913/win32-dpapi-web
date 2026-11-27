@@ -26,10 +26,14 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.github.toolfactory.narcissus.Narcissus;
 
 public class ServletContextListenerImpl implements ServletContextListener {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ServletContextListenerImpl.class);
 
 	private static class MethodVisitorImpl extends MethodVisitor {
 
@@ -122,15 +126,19 @@ public class ServletContextListenerImpl implements ServletContextListener {
 				//
 		} catch (final IOException e) {
 			//
-			printStackTrace(e);
+			error(LOG, getMessage(e), e);
 			//
 		} // try
 			//
 	}
 
-	private static void printStackTrace(final Throwable instance) {
+	private static String getMessage(final Throwable instance) {
+		return instance != null ? instance.getMessage() : null;
+	}
+
+	private static void error(final Logger instance, final String msg, final Throwable t) {
 		if (instance != null) {
-			instance.printStackTrace();
+			instance.error(msg, t);
 		}
 	}
 
