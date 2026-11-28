@@ -73,3 +73,12 @@ http://127.0.0.1:8080/cryptProtectData
 <pre>curl -X POST http://127.0.0.1:8080/cryptUnprotectData?entropy=password -H "Content-Type:text/plain" -d "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAADC87mOB3PLzi+Erf2O8d2NutnbfT/A4df9uX8WjxeqxAAAAAAOgAAAAAIAACAAAAAaVSiEMb5UZN1z+KaWhivLDfui/lmLjs5+WeA6EZ32lBAAAACayHFQJJ/J9m0tjrQjxH7TQAAAADoW5uZ3yckEF9wiGTOSPvUXU2gLWcorTdC6bD6klWZFQsD/fnaDfChE9P86HAFJHirvM0Z630ZOhV4fpJWD7aI="</pre>
 <pre>Hello World</pre>
 
+
+## Reference
+
+<table>
+<tbody>
+<tr><td><a href="https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata">CryptProtectData function (dpapi.h) - Win32 apps | Microsoft Learn</a></td></tr>
+<tr><td><a href="https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata">CryptUnprotectData function (dpapi.h) - Win32 apps | Microsoft Learn</a></td></tr>
+</tbody>
+</table>
