@@ -65,6 +65,7 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -892,10 +893,8 @@ public class MainServlet extends HttpServlet {
 		//
 		final Map<String, Object> cryptProtectData = cryptProtectData(request);
 		//
-		final String encoding = ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENCODING)),
+		String encoding = ObjectUtils.getIfNull(toString(MapUtils.getObject(cryptProtectData, ENCODING)),
 				getParameter(request, ENCODING));
-		//
-		put(map, ENCODING, encoding);
 		//
 		byte[] input = getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)),
 				getParameter(request, INPUT)));
@@ -903,6 +902,8 @@ public class MainServlet extends HttpServlet {
 		Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
 		//
 		final File file = getValueByClass(cryptProtectData, File.class);
+		//
+		final boolean textPlain = request != null && Objects.equals(request.getContentType(), "text/plain");
 		//
 		if (Boolean.logicalAnd(StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
 				file != null)) {
@@ -914,8 +915,34 @@ public class MainServlet extends HttpServlet {
 			//
 			input = FileUtils.readFileToByteArray(file);
 			//
+		} else if (textPlain) {
+			//
+			try (final InputStream is = request.getInputStream()) {
+				//
+				input = IOUtils.toByteArray(is);
+				//
+				encoding = ObjectUtils.getIfNull(encoding, "base64");
+				//
+			} // if
+				//
 		} // if
 			//
+		if (!containsKey(encodingMap, encoding)) {
+			//
+			if (containsKey(encodingMap, "base64")) {
+				//
+				encoding = "base64";
+				//
+			} else if (MapUtils.isNotEmpty(encodingMap)) {
+				//
+				encoding = IterableUtils.get(keySet(encodingMap), 0);
+				//
+			} // if
+				//
+		} // if
+			//
+		put(map, ENCODING, encoding);
+		//
 		forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
 		//
 		final boolean json = Objects.equals(Boolean.TRUE,
@@ -958,9 +985,13 @@ public class MainServlet extends HttpServlet {
 			//
 		} // if
 			//
-		put(map, OUTPUT, testAndApply(Objects::nonNull, testAndApply(Objects::nonNull, output,
-				x -> encode(cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))), x),
-				null), String::new, null));
+		final String _encoding = encoding;
+		//
+		final String outputString = testAndApply(Objects::nonNull, testAndApply(Objects::nonNull, output,
+				x -> encode(cast(BinaryEncoder.class, newInstance(MapUtils.getObject(encodingMap, _encoding))), x),
+				null), String::new, null);
+		//
+		put(map, OUTPUT, outputString);
 		//
 		try (final Writer writer = getWriter(response)) {
 			//
@@ -972,6 +1003,10 @@ public class MainServlet extends HttpServlet {
 										contains(Arrays.asList(OUTPUT, ENCODING), getKey(x)))),
 						Collectors.toMap(MainServlet::getKey, MainServlet::getValue))));
 				//
+			} else if (textPlain) {
+				//
+				write(writer, outputString);
+				//
 			} else {
 				//
 				process(getTemplate(configuration, StringUtils.substring(servletPath, 1) + ".ftl"), map, writer);
@@ -979,7 +1014,6 @@ public class MainServlet extends HttpServlet {
 			} // if
 				//
 		} // try
-			//
 			//
 	}
 
@@ -1019,6 +1053,10 @@ public class MainServlet extends HttpServlet {
 			//
 		return false;
 		//
+	}
+
+	private static String toString(final Object instance) {
+		return instance != null ? instance.toString() : null;
 	}
 
 	private static <K> Entry<K, Object> mapEntry(final Entry<K, Object> entry) {
@@ -1253,7 +1291,7 @@ public class MainServlet extends HttpServlet {
 
 	private static void write(final Writer instance, final String string) throws IOException {
 		//
-		if (instance == null) {
+		if (instance == null || string == null) {
 			//
 			return;
 			//

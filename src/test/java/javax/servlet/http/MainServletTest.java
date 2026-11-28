@@ -84,8 +84,9 @@ class MainServletTest {
 			METHOD_STREAM, METHOD_TEST_AND_APPLY, METHOD_GET_PARAMETER_TYPES, METHOD_CAST, METHOD_VALUE_OF,
 			METHOD_TEST_AND_ACCEPT3, METHOD_TEST_AND_ACCEPT4, METHOD_GET_TYPE, METHOD_GET_DECLARED_FIELDS,
 			METHOD_PUT_ALL, METHOD_ADD, METHOD_EXISTS, METHOD_IS_FILE, METHOD_CAN_READ, METHOD_GET_VALUE_BY_CLASS,
-			METHOD_PUT, METHOD_CRYPT_PROTECT_DATA, METHOD_GET_BYTES, METHOD_CONTAINS_KEY, METHOD_AND,
-			METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY, METHOD_HANDLE_THROWABLE = null;
+			METHOD_PUT, METHOD_CRYPT_PROTECT_DATA1, METHOD_CRYPT_PROTECT_DATA3, METHOD_GET_BYTES, METHOD_CONTAINS_KEY,
+			METHOD_AND, METHOD_GET_FORM_FIELD_MAP, METHOD_GET_NOT_FORM_FIELDS, METHOD_MAP_ENTRY,
+			METHOD_HANDLE_THROWABLE = null;
 
 	@BeforeClass
 	static void beforeClass() throws NoSuchMethodException {
@@ -138,8 +139,11 @@ class MainServletTest {
 		//
 		(METHOD_PUT = clz.getDeclaredMethod("put", Map.class, Object.class, Object.class)).setAccessible(true);
 		//
-		(METHOD_CRYPT_PROTECT_DATA = clz.getDeclaredMethod("cryptProtectData", HttpServletRequest.class))
+		(METHOD_CRYPT_PROTECT_DATA1 = clz.getDeclaredMethod("cryptProtectData", HttpServletRequest.class))
 				.setAccessible(true);
+		//
+		(METHOD_CRYPT_PROTECT_DATA3 = clz.getDeclaredMethod("cryptProtectData", HttpServletRequest.class,
+				HttpServletResponse.class, Configuration.class)).setAccessible(true);
 		//
 		(METHOD_GET_BYTES = clz.getDeclaredMethod("getBytes", String.class)).setAccessible(true);
 		//
@@ -754,7 +758,9 @@ class MainServletTest {
 							Arrays.equals(parameterTypes,
 									new Class<?>[] { Win32Exception.class, Integer.TYPE, Integer.TYPE }))
 					|| Boolean.logicalAnd(Objects.equals(name, "mapEntry"),
-							Arrays.equals(parameterTypes, new Class<?>[] { Entry.class }))) {
+							Arrays.equals(parameterTypes, new Class<?>[] { Entry.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "toString"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Object.class }))) {
 				//
 				Assert.assertNotNull(result, toString);
 				//
@@ -1166,9 +1172,17 @@ class MainServletTest {
 				//
 			} // if
 				//
-			Assert.assertEquals(
-					invoke(METHOD_CRYPT_PROTECT_DATA, null, Reflection.newProxy(HttpServletRequest.class, ih)),
-					Collections.emptyMap());
+			final HttpServletRequest httpServletRequest = Reflection.newProxy(HttpServletRequest.class, ih);
+			//
+			Assert.assertEquals(invoke(METHOD_CRYPT_PROTECT_DATA1, null, httpServletRequest), Collections.emptyMap());
+			//
+			if (ih != null) {
+				//
+				ih.contentType = "text/plain";
+				//
+			} // if
+				//
+			Assert.assertNull(invoke(METHOD_CRYPT_PROTECT_DATA3, null, httpServletRequest, null, null));
 			//
 		} // try
 			//
