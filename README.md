@@ -17,7 +17,7 @@ INFO:oejs.Server:main: Started @704ms</pre>
 ### Run Argument(s)
 <table>
 <thead>
-<tr><th>Parameter</th><th>Sample&nbsp;Value</th><th>Remarks</th></tr>
+<tr><th>Argument</th><th>Sample&nbsp;Value</th><th>Remarks</th></tr>
 </thead>
 <tbody>
 <tr><td rowspan="2">primaryLanguage</td><td>9</td><td rowspan="4"><a href="https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-makelangid">MAKELANGID macro (winnt.h) - Win32 apps | Microsoft Learn</a></td></tr>
@@ -31,12 +31,28 @@ INFO:oejs.Server:main: Started @704ms</pre>
 http://127.0.0.1:8080/cryptProtectData
 <img width="1896" height="385" alt="Untitled" src="https://github.com/user-attachments/assets/b341819e-869b-412c-b103-a6d5d370cdcb" />
 
+## Parameter
+<table>
+<caption>cryptUnprotectData</caption>
+<thead>
+<tr><th>Parameter</th><th>Sample&nbsp;Value</th><th>Possible&nbsp;Value(s)</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="7">encoding</td><td rowspan="7">base64</td><td>base16</td></tr>
+<tr><td>base32</td></tr>
+<tr><td>base45</td></tr>
+<tr><td>base58</td></tr>
+<tr><td>base64</td></tr>
+<tr><td>binary</td></tr>
+<tr><td>hex</td></tr>
+<tr><td>flags</td><td></td><td></td></tr>
+<tr><td>entropy</td><td></td><td></td></tr>
+<tr><td>description</td><td></td><td></td></tr>
+</tbody>
+</table>
+
 ## Command
 
 ### cryptUnprotectData
-
-<pre>curl --url "http://127.0.0.1:8080/cryptUnprotectData" -H "Content-Type: application/x-www-form-urlencoded" --data-raw "input=AQAAANCMnd8BFdERjHoAwE%2FCl%2BsBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAACEgF6l9kQd4%2F4nrRBHlPNLf%2BFumZIvntYfLgiud1NLPwAAAAAOgAAAAAIAACAAAACcYvsAXRikgkcFqqynn0vlVNE%2Bsz3gxmPdZRuYiIsGPRAAAABfjUVS%2B2VxO1QjdWSdi1PkQAAAABG5SpVYhYbAcMew2sAbL3LZuf1%2BXvh3OPqwpS9WJnmSrMBeSw3ZthXDQMbx5O0lBimOL5zL52fgDqBaXcR2nU0%3D&encoding=base64&flags=0&json=true"</pre>
-<pre>{"encoding":"base64","output":"Hello World"}</pre>
-
-<pre>curl --url "http://127.0.0.1:8080/cryptUnprotectData" -H "Content-Type: application/x-www-form-urlencoded" --data-raw "input=AQAAANCMnd8BFdERjHoAwE%2FCl%2BsBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAACEgF6l9kQd4%2F4nrRBHlPNLf%2BFumZIvntYfLgiud1NLPwAAAAAOgAAAAAIAACAAAACcYvsAXRikgkcFqqynn0vlVNE%2Bsz3gxmPdZRuYiIsGPRAAAABfjUVS%2B2VxO1QjdWSdi1PkQAAAABG5SpVYhYbAcMew2sAbL3LZuf1%2BXvh3OPqwpS9WJnmSrMBeSw3ZthXDQMbx5O0lBimOL5zL52fgDqBaXcR2nU0%3D&encoding=base64&flags=0&entropy=1&json=true"</pre>
-<pre>{"encoding":"base64","throwable":{"errorCode":13,"message":"The data is invalid."}}</pre>
+<pre>curl -X POST http://127.0.0.1:8080/cryptProtectData -H "Content-Type:text/plain"</pre>
+<pre>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAAAK6uiIpJ5+1XznL7n9fob8u65/pHuxSSYCe9FdZ8KZCgAAAAAOgAAAAAIAACAAAACYrNRIctQfWLHo6SNM9ME5EkhS2YO5ooRZlTP3uYFHJxAAAACKU3trkt60oaySd3cPPUwVQAAAABU+W/T/KZqfrUqoLFWtL0/iO8tqn9Q+Ykw8fMBveo4sWOWvFqJZMHuU0jc5aIh6UxSLTjkz9i+PrjY+LCZYhrk=</pre>
