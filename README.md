@@ -54,5 +54,11 @@ http://127.0.0.1:8080/cryptProtectData
 ## Command
 
 ### cryptUnprotectData
+
+### Empty Input
 <pre>curl -X POST http://127.0.0.1:8080/cryptProtectData -H "Content-Type:text/plain"</pre>
 <pre>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAAAK6uiIpJ5+1XznL7n9fob8u65/pHuxSSYCe9FdZ8KZCgAAAAAOgAAAAAIAACAAAACYrNRIctQfWLHo6SNM9ME5EkhS2YO5ooRZlTP3uYFHJxAAAACKU3trkt60oaySd3cPPUwVQAAAABU+W/T/KZqfrUqoLFWtL0/iO8tqn9Q+Ykw8fMBveo4sWOWvFqJZMHuU0jc5aIh6UxSLTjkz9i+PrjY+LCZYhrk=</pre>
+
+### Input
+<pre>curl -X POST http://127.0.0.1:8080/cryptProtectData -H "Content-Type:text/plain" -d "Hello World"</pre>
+<pre>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAADGlfyr9wSU2PAbkwpUQwggAAAAACAAAAAAAQZgAAAAEAACAAAAAXK9EvvOwclhkGQp9eic6u0834qdGqUZgZrbEbrDzOYQAAAAAOgAAAAAIAACAAAAD2uXi2g89aKzRhq2WvwJXpt2MvFMV+RC3lS+0zmst9XxAAAAC4tCTdQfOf4WJjkQo5U19GQAAAAGhE2dB/A/p2rM5Lhjgz9Sqtp3xWA5dRnX4BfJI8lcWB1USYHDfLJTei94JXNBOayUzbp/GGpXaTkbCy/B2OB9g=</pre>
