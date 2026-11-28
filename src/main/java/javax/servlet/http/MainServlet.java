@@ -125,6 +125,8 @@ public class MainServlet extends HttpServlet {
 
 	private static final String FILE_NAME = "fileName";
 
+	private static final String BASE64 = "base64";
+
 	@Target(ElementType.FIELD)
 	@Retention(RetentionPolicy.RUNTIME)
 	private @interface Note {
@@ -432,7 +434,7 @@ public class MainServlet extends HttpServlet {
 					//
 					put(map, ENCODINGS, encodings);
 					//
-					put(map, ENCODING, "base64");
+					put(map, ENCODING, BASE64);
 					//
 					put(map, FLAGS, Objects.equals(servletPath, "/cryptProtectData") ? DEFAULT_CRYPT_PROTECT_DATA_FLAGS
 							: DEFAULT_CRYPT_UNPROTECT_DATA_FLAGS);
@@ -771,7 +773,7 @@ public class MainServlet extends HttpServlet {
 				input = decode(
 						cast(BinaryDecoder.class,
 								newInstance(MapUtils.getObject(encodingMap,
-										encoding = ObjectUtils.getIfNull(encoding, "base64")))),
+										encoding = ObjectUtils.getIfNull(encoding, BASE64)))),
 						testAndApply(Objects::nonNull, is, IOUtils::toByteArray, null));
 				//
 			} // if
@@ -780,9 +782,9 @@ public class MainServlet extends HttpServlet {
 			//
 		if (!containsKey(encodingMap, encoding)) {
 			//
-			if (containsKey(encodingMap, "base64")) {
+			if (containsKey(encodingMap, BASE64)) {
 				//
-				encoding = "base64";
+				encoding = BASE64;
 				//
 			} else if (MapUtils.isNotEmpty(encodingMap)) {
 				//
@@ -957,7 +959,7 @@ public class MainServlet extends HttpServlet {
 				//
 				input = IOUtils.toByteArray(is);
 				//
-				encoding = ObjectUtils.getIfNull(encoding, "base64");
+				encoding = ObjectUtils.getIfNull(encoding, BASE64);
 				//
 			} // if
 				//
@@ -965,9 +967,9 @@ public class MainServlet extends HttpServlet {
 			//
 		if (!containsKey(encodingMap, encoding)) {
 			//
-			if (containsKey(encodingMap, "base64")) {
+			if (containsKey(encodingMap, BASE64)) {
 				//
-				encoding = "base64";
+				encoding = BASE64;
 				//
 			} else if (MapUtils.isNotEmpty(encodingMap)) {
 				//
