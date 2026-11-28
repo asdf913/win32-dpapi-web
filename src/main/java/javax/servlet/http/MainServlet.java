@@ -754,7 +754,7 @@ public class MainServlet extends HttpServlet {
 		//
 		final File file = getValueByClass(cryptProtectData, File.class);
 		//
-		final boolean textPlain = request != null && Objects.equals(request.getContentType(), "text/plain");
+		final boolean textPlain = Objects.equals(getContentType(request), "text/plain");
 		//
 		if (Boolean.logicalAnd(StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
 				file != null)) {
@@ -898,6 +898,10 @@ public class MainServlet extends HttpServlet {
 			//
 	}
 
+	private static String getContentType(final ServletRequest instance) {
+		return instance != null ? instance.getContentType() : null;
+	}
+
 	private static ServletContext getServletContext(final ServletRequest instance) {
 		return instance != null ? instance.getServletContext() : null;
 	}
@@ -941,7 +945,7 @@ public class MainServlet extends HttpServlet {
 		//
 		final File file = getValueByClass(cryptProtectData, File.class);
 		//
-		final boolean textPlain = request != null && Objects.equals(request.getContentType(), "text/plain");
+		final boolean textPlain = Objects.equals(getContentType(request), "text/plain");
 		//
 		if (Boolean.logicalAnd(StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
 				file != null)) {
