@@ -741,10 +741,8 @@ public class MainServlet extends HttpServlet {
 		//
 		final Map<String, Object> cryptProtectData = cryptProtectData(request);
 		//
-		final String encoding = ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENCODING)),
+		String encoding = ObjectUtils.getIfNull(toString(MapUtils.getObject(cryptProtectData, ENCODING)),
 				getParameter(request, ENCODING));
-		//
-		put(map, ENCODING, encoding);
 		//
 		byte[] input = decode(cast(BinaryDecoder.class, newInstance(MapUtils.getObject(encodingMap, encoding))),
 				getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT)),
@@ -753,6 +751,8 @@ public class MainServlet extends HttpServlet {
 		Throwable throwable = getValueByClass(cryptProtectData, Throwable.class);
 		//
 		final File file = getValueByClass(cryptProtectData, File.class);
+		//
+		final boolean textPlain = request != null && Objects.equals(request.getContentType(), "text/plain");
 		//
 		if (Boolean.logicalAnd(StringUtils.isNotEmpty(Objects.toString(MapUtils.getObject(cryptProtectData, INPUT))),
 				file != null)) {
@@ -764,8 +764,36 @@ public class MainServlet extends HttpServlet {
 			//
 			input = FileUtils.readFileToByteArray(file);
 			//
+		} else if (textPlain) {
+			//
+			try (final InputStream is = request.getInputStream()) {
+				//
+				input = decode(
+						cast(BinaryDecoder.class,
+								newInstance(MapUtils.getObject(encodingMap,
+										encoding = ObjectUtils.getIfNull(encoding, "base64")))),
+						testAndApply(Objects::nonNull, is, IOUtils::toByteArray, null));
+				//
+			} // if
+				//
 		} // if
 			//
+		if (!containsKey(encodingMap, encoding)) {
+			//
+			if (containsKey(encodingMap, "base64")) {
+				//
+				encoding = "base64";
+				//
+			} else if (MapUtils.isNotEmpty(encodingMap)) {
+				//
+				encoding = IterableUtils.get(keySet(encodingMap), 0);
+				//
+			} // if
+				//
+		} // if
+			//
+		put(map, ENCODING, encoding);
+		//
 		forEach(cryptProtectData, (a, b) -> testAndAccept(x -> !containsKey(x, a), map, x -> put(x, a, b)));
 		//
 		final boolean json = Objects.equals(Boolean.TRUE,
@@ -774,11 +802,13 @@ public class MainServlet extends HttpServlet {
 		//
 		byte[] output = null;
 		//
+		String outputString = null;
+		//
 		try {
 			//
 			if (throwable == null) {
 				//
-				put(map, OUTPUT, testAndApply(Objects::nonNull, output = cryptUnprotectData(input,
+				put(map, OUTPUT, outputString = testAndApply(Objects::nonNull, output = cryptUnprotectData(input,
 						valueOf(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, FLAGS)),
 								getParameter(request, FLAGS))),
 						getBytes(ObjectUtils.getIfNull(Objects.toString(MapUtils.getObject(cryptProtectData, ENTROPY)),
@@ -849,6 +879,12 @@ public class MainServlet extends HttpServlet {
 												MainServlet::mapEntry),
 										LinkedHashMap::new, (a, b) -> put(a, getKey(b), getValue(b)),
 										MainServlet::putAll)));
+				//
+				return;
+				//
+			} else if (textPlain) {
+				//
+				write(writer, outputString);
 				//
 				return;
 				//
